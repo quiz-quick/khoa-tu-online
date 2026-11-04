@@ -1,0 +1,2654 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lên Chùa Cầu An - Chùa Bác Ái</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a100c;
+            color: #fef3c7;
+        }
+        #canvas-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .pointer-auto {
+            pointer-events: auto;
+        }
+        .btn-temple {
+            background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+            border: 2px solid #fbbf24;
+            color: #fef3c7;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .btn-temple:active, .btn-temple:hover {
+            transform: scale(0.97);
+            background: linear-gradient(135deg, #d97706 0%, #92400e 100%);
+            box-shadow: 0 2px 10px rgba(251, 191, 36, 0.45);
+        }
+        .btn-tax-navy {
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            border: 2px solid #fbbf24;
+            color: #fef08a;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.55);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn-tax-navy:hover, .btn-tax-navy:active {
+            transform: scale(0.97);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e293b 100%);
+        }
+        .wood-panel {
+            background: rgba(34, 17, 10, 0.94);
+            border: 2px solid #f59e0b;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.85), inset 0 0 24px rgba(180, 83, 9, 0.25);
+            backdrop-filter: blur(10px);
+        }
+        /* Bong bóng HOT công việc & lời cầu của Cán bộ Thuế AI */
+        .ai-bubble {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            background: #fffbeb;
+            color: #1e293b;
+            padding: 5px 11px;
+            border-radius: 16px;
+            font-size: 11.5px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 5px 14px rgba(0,0,0,0.4);
+            border: 2px solid #f59e0b;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .ai-bubble .hot-badge {
+            background: linear-gradient(135deg, #ef4444, #d97706);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 999px;
+            letter-spacing: 0.03em;
+            box-shadow: 0 1px 4px rgba(239,68,68,0.5);
+        }
+        .ai-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 7px 6px 0;
+            border-style: solid;
+            border-color: #f59e0b transparent transparent transparent;
+        }
+        @keyframes screen-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-5px, 3px); }
+            40% { transform: translate(5px, -3px); }
+            60% { transform: translate(-3px, -2px); }
+            80% { transform: translate(3px, 2px); }
+        }
+        .shake-anim {
+            animation: screen-shake 0.45s ease-out;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 3px;
+        }
+    </style>
+
+    <!-- Nhập Three.js qua CDN ES Module -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+</head>
+<body>
+
+    <!-- Khung chứa cảnh 3D -->
+    <div id="canvas-container"></div>
+
+    <!-- Lớp chứa bong bóng thoại HOT của các Cán bộ Thuế AI -->
+    <div id="bubbles-container" class="ui-layer overflow-hidden"></div>
+
+    <!-- Giao diện chính (HUD) -->
+    <div id="hud-layer" class="ui-layer flex flex-col justify-between p-2.5 sm:p-4 hidden">
+        <!-- Thanh trên cùng -->
+        <div class="flex justify-between items-start gap-2 w-full">
+            <!-- Bảng thông tin Khóa Tu & Chế độ -->
+            <div class="wood-panel px-3 py-2 rounded-2xl pointer-auto max-w-[64%] sm:max-w-md">
+                <div class="flex flex-wrap items-center gap-1.5 text-amber-300 font-extrabold text-xs sm:text-sm">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>CHÙA BÁC ÁI • KHÓA TU 2026</span>
+                </div>
+                <div class="text-[11px] text-amber-200/95 font-medium mt-0.5">
+                    “Giữ vững chuyên môn – Hoàn thành KPI – Khỏe để chạy deadline”
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <button id="btn-lighting-mode" class="text-[11px] bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 border border-amber-300/70 px-2.5 py-0.5 rounded-full text-amber-100 shadow cursor-pointer transition active:scale-95">
+                        🌤️ Hoàng Hôn Ấm
+                    </button>
+                    <button id="btn-outfit-switch" class="text-[11px] btn-tax-navy px-2.5 py-0.5 rounded-full font-bold">
+                        👔 Đồng Phục: Nữ Thuế
+                    </button>
+                    <button id="btn-meditate-toggle" class="text-[11px] bg-emerald-800/90 hover:bg-emerald-700 border border-emerald-300/70 px-2.5 py-0.5 rounded-full text-emerald-100 font-bold cursor-pointer transition active:scale-95">
+                        🧘 Ngồi Thiền Bình Tâm
+                    </button>
+                </div>
+                <p class="text-[10.5px] text-amber-100/80 mt-1">
+                    Hôm nay có <span id="visitor-counter" class="font-bold text-amber-300">2,026</span> cán bộ & Phật tử lên chùa cầu an
+                </p>
+            </div>
+
+            <!-- Cụm nút công cụ góc phải -->
+            <div class="flex flex-col sm:flex-row gap-1.5 pointer-auto items-end">
+                <div class="flex gap-1.5">
+                    <button id="btn-audio-toggle" class="btn-temple w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-base sm:text-lg" title="Bật/Tắt âm thanh">
+                        🔊
+                    </button>
+                    <button id="btn-prayer-cloud-open" class="btn-tax-navy px-3 h-9 sm:h-10 rounded-full flex items-center justify-center gap-1 text-xs sm:text-sm font-bold" title="Xem Tâm Nguyện Cán Bộ Thuế 2026">
+                        <span>🙏</span> <span>9 Điều Cầu An Thuế</span>
+                    </button>
+                    <button id="btn-help-open" class="btn-temple px-3 h-9 sm:h-10 rounded-full flex items-center justify-center gap-1 text-xs sm:text-sm font-bold" title="Cẩm nang Lễ Phật">
+                        <span>🪷</span> <span class="hidden md:inline">Cẩm Nang</span>
+                    </button>
+                </div>
+                <div class="flex gap-1.5">
+                    <button id="btn-notebook-open" class="btn-temple px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1">
+                        <span>📜</span> <span>Sổ Cầu An</span>
+                    </button>
+                    <button id="btn-share-open" class="btn-temple px-3 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1">
+                        <span>🌸</span> <span>Thiệp 2026</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khu vực giữa: Thông báo nhanh (Toast) -->
+        <div id="toast-message" class="self-center wood-panel px-5 py-2.5 rounded-full text-amber-200 text-xs sm:text-sm font-semibold transition-opacity duration-300 opacity-0 pointer-events-none text-center max-w-[92%] shadow-2xl">
+            A Di Đà Phật... Xin cho hệ thống ETAX ổn định, không lỗi!
+        </div>
+
+        <!-- Khu vực dưới: Cần điều khiển ảo & Nút Hành Động -->
+        <div class="relative w-full h-36 sm:h-40 flex items-end justify-between">
+            <!-- Cần điều khiển ảo (Virtual Joystick) -->
+            <div id="joystick-zone" class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-amber-950/55 border-2 border-amber-500/45 backdrop-blur-sm pointer-auto flex items-center justify-center ml-1 mb-1 touch-none">
+                <div class="text-[10px] text-amber-300/45 font-bold pointer-events-none select-none">ĐI LẠI</div>
+                <div id="joystick-knob" class="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-700 border-2 border-amber-200 shadow-lg absolute pointer-events-none transition-transform duration-75"></div>
+            </div>
+
+            <!-- Cụm nút Hành động nhanh & Nút Tương tác khi đến gần -->
+            <div class="absolute left-1/2 -translate-x-1/2 bottom-2 flex flex-col items-center gap-2 pointer-auto z-20 w-max max-w-[90vw]">
+                <div id="action-prompt-wrap" class="hidden">
+                    <button id="btn-trigger-activity" class="btn-temple px-5 py-3 rounded-2xl text-sm sm:text-base font-extrabold flex items-center gap-2 animate-bounce shadow-2xl whitespace-nowrap border-2 border-yellow-300">
+                        <span id="action-icon" class="text-xl">🙏</span>
+                        <span id="action-label">Dâng Hương Cầu ETAX Mượt</span>
+                    </button>
+                </div>
+                <!-- Thanh chọn nhanh 5 hoạt động để tiện trải nghiệm ngay cả khi đang ngồi thiền -->
+                <div class="wood-panel px-2.5 py-1.5 rounded-2xl flex items-center gap-1.5 text-[11px] sm:text-xs font-bold shadow-xl">
+                    <button data-quick-act="incense" class="btn-quick-act px-2.5 py-1.5 rounded-xl bg-amber-900/80 hover:bg-amber-700 text-amber-100 border border-amber-500/40 transition">🪔 Dâng Hương</button>
+                    <button data-quick-act="woodenfish" class="btn-quick-act px-2.5 py-1.5 rounded-xl bg-amber-900/80 hover:bg-amber-700 text-amber-100 border border-amber-500/40 transition">🪵 Gõ Mõ Xả KPI</button>
+                    <button data-quick-act="bell" class="btn-quick-act px-2.5 py-1.5 rounded-xl bg-amber-900/80 hover:bg-amber-700 text-amber-100 border border-amber-500/40 transition">🔔 Thỉnh Chuông</button>
+                    <button data-quick-act="wish" class="btn-quick-act px-2.5 py-1.5 rounded-xl bg-amber-900/80 hover:bg-amber-700 text-amber-100 border border-amber-500/40 transition">🎀 Cầu An</button>
+                    <button data-quick-act="fortune" class="btn-quick-act px-2.5 py-1.5 rounded-xl bg-amber-900/80 hover:bg-amber-700 text-amber-100 border border-amber-500/40 transition">🎋 Xin Quẻ</button>
+                </div>
+            </div>
+
+            <!-- Gợi ý điều khiển bên phải -->
+            <div class="hidden sm:block text-right text-[11px] text-amber-200/90 bg-black/60 border border-amber-500/40 px-3 py-2 rounded-xl backdrop-blur-sm mr-1 mb-1 max-w-xs space-y-0.5 shadow-lg">
+                <div>🖱️ <b>Click sân / Chánh điện</b> hoặc <b>WASD</b>: Đi tới</div>
+                <div>🔄 <b>Kéo chuột</b>: Xoay 360° • 🔍 <b>Cuộn chuột</b>: Zoom</div>
+                <div>📚 <b>Click Bàn Luật / Laptop / Tạ Gym</b> để xem!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. MÀN HÌNH CHÀO (WELCOME MODAL - KHÓA TU BÌNH TÂM CÁN BỘ THUẾ 2026) -->
+    <div id="modal-welcome" class="ui-layer flex items-center justify-center p-4 bg-black/80 backdrop-blur-md pointer-auto z-50">
+        <div class="wood-panel w-full max-w-lg rounded-3xl p-5 sm:p-7 text-center relative overflow-hidden">
+            <div class="inline-block bg-red-800/90 border border-amber-300 text-amber-200 text-[11px] sm:text-xs font-extrabold px-3.5 py-1 rounded-full tracking-wider uppercase mb-2 shadow">
+                🔥 CHÙA BÁC ÁI • XUÂN BÍNH NGỌ 2026 🔥
+            </div>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-amber-300 drop-shadow mb-1">
+                KHÓA TU “BÌNH TÂM CÁN BỘ THUẾ 2026”
+            </h1>
+            <p class="text-xs sm:text-sm font-semibold text-amber-100 italic mb-4">
+                “Giữ vững chuyên môn – Vượt chông công việc – Hoàn thành KPI – Vẫn khỏe để chạy deadline”
+            </p>
+
+            <div class="bg-amber-950/80 border border-amber-600/50 rounded-2xl p-3.5 text-left text-xs text-amber-100/95 mb-4 space-y-1.5">
+                <div class="font-bold text-amber-300 text-xs sm:text-sm mb-1">✨ Không gian 3D Sống Động Tái Hiện Từ Tranh:</div>
+                <div>• <b>Nhân vật Cán bộ Thuế 3D:</b> Áo xanh tím than, cầu vai vàng, sau lưng in logo & chữ <b>"THUẾ"</b>.</div>
+                <div>• <b>Chánh Điện Bình Tâm:</b> Có chồng sách <i>Luật QLT, NĐ 252/2026, TT 89/2026</i>, Laptop checklist <i>ETAX, PNN, LPTB-TMS, HĐĐT-MTT</i>, ly sứ Thuế & cặp tạ hồng <i>GYM 🤍</i>.</div>
+                <div>• <b>Đồng nghiệp AI & 5 Hoạt động:</b> Cùng ngồi thiền, dâng sớ 9 điều cầu an, gõ mõ hóa giải deadline, thỉnh chuông và rút quẻ lành!</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left mb-4">
+                <div>
+                    <label for="input-player-name" class="block text-xs font-bold text-amber-300 mb-1">Tên Cán bộ / Phật tử:</label>
+                    <input id="input-player-name" type="text" maxlength="26" value="Cán bộ Thuế Bình Tâm"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-amber-950/90 border border-amber-500/60 text-amber-100 placeholder-amber-400/40 focus:outline-none focus:border-amber-300 text-xs sm:text-sm font-semibold">
+                </div>
+                <div>
+                    <label for="select-player-style" class="block text-xs font-bold text-amber-300 mb-1">Hình tượng nhân vật 3D:</label>
+                    <select id="select-player-style" class="w-full px-3 py-2.5 rounded-xl bg-amber-950/90 border border-amber-500/60 text-amber-100 focus:outline-none focus:border-amber-300 text-xs sm:text-sm font-semibold">
+                        <option value="tax_female">👩‍💼 Nữ Cán bộ Thuế (Tóc búi nơ)</option>
+                        <option value="tax_male">👨‍💼 Nam Cán bộ Thuế (Lịch lãm)</option>
+                        <option value="tax_senior">🧓 Cán bộ Thuế Lão thành (Tóc bạc)</option>
+                        <option value="ao_lam">🪷 Phật tử Áo Lam truyền thống</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="btn-enter-temple" class="btn-temple w-full py-3.5 rounded-2xl text-base sm:text-lg font-extrabold tracking-wide shadow-2xl">
+                🙏 Bước Vào Khóa Tu Bình Tâm 2026 🙏
+            </button>
+
+            <div class="mt-3 text-[11px] text-amber-300/70">
+                Vui tươi • Văn minh • Tôn trọng tín ngưỡng • Giải tỏa căng thẳng mùa quyết toán
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MODAL TÂM NGUYỆN 9 ĐIỀU CẦU AN CÁN BỘ THUẾ (ĐÁM MÂY TRONG TRANH) -->
+    <div id="modal-prayer-cloud" class="ui-layer hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm pointer-auto z-40">
+        <div class="wood-panel w-full max-w-lg rounded-3xl p-5 sm:p-6 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-amber-700/50 pb-3 mb-3">
+                <h3 class="text-lg sm:text-xl font-extrabold text-amber-300">🙏 Tâm Nguyện “Bình Tâm Cán Bộ Thuế 2026”</h3>
+                <button class="btn-close-modal text-amber-300 hover:text-white text-lg font-bold px-2.5 py-0.5 rounded-lg bg-amber-900/50">✕</button>
+            </div>
+
+            <div class="overflow-y-auto pr-1 flex-1 space-y-3">
+                <div class="bg-[#fffbeb] text-amber-950 p-4 sm:p-5 rounded-3xl border-4 border-amber-500 shadow-inner">
+                    <div class="text-center font-extrabold text-red-700 text-base sm:text-lg mb-2">
+                        A Di Đà Phật... Xin cho con:
+                    </div>
+                    <ul class="space-y-2 text-xs sm:text-sm font-semibold">
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Hệ thống ETAX</b> ổn định, không lỗi, tỷ lệ xử lý 100% mượt mà.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>HĐĐT – MTT (Captcha)</b> thông suốt, không quay vòng vòng.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Giải quyết phản ánh, kiến nghị NNT</b> nhanh gọn, thấu tình đạt lý, không phát sinh thêm.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Báo cáo bớt, mẫu biểu gọn</b>, dữ liệu chuẩn chỉnh dễ tổng hợp.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>KPI nhẹ nhàng</b>, hoàn thành đủ và vượt chỉ tiêu, không bị dí sát nút.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Đóng 03 – 06 & Đối soát chứng từ LPTB – TMS</b> đúng hạn, khớp số, không vướng.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Nợ thuế giảm sâu</b>, đôn đốc & thu hồi hiệu quả, PNN suôn sẻ.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Kiểm tra nội bộ</b> thuận lợi, hồ sơ sạch đẹp, hoàn thành an toàn.</span></li>
+                        <li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">✅</span> <span><b>Có sức khỏe, tinh thần vững vàng</b>, bớt đi làm T7 - CN để... <b>vẫn còn thời gian đi tập GYM! 💪❤️</b></span></li>
+                    </ul>
+                </div>
+
+                <!-- Bảng trạng thái Góc Học Tập & Chạy Deadline trong Chánh Điện -->
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-amber-950/80 p-2.5 rounded-2xl border border-amber-600/40">
+                        <div class="text-lg">📚</div>
+                        <div class="font-bold text-amber-300">Luật QLT & NĐ 252</div>
+                        <div class="text-[10px] text-amber-200/80">Nắm vững nghiệp vụ</div>
+                    </div>
+                    <div class="bg-amber-950/80 p-2.5 rounded-2xl border border-amber-600/40">
+                        <div class="text-lg">💻</div>
+                        <div class="font-bold text-emerald-300">ETAX • TMS • MTT</div>
+                        <div class="text-[10px] text-amber-200/80">6/6 Xanh mượt</div>
+                    </div>
+                    <div class="bg-amber-950/80 p-2.5 rounded-2xl border border-amber-600/40">
+                        <div class="text-lg">🏋️‍♀️</div>
+                        <div class="font-bold text-pink-300">Tạ Hồng & GYM</div>
+                        <div class="text-[10px] text-amber-200/80">Khỏe chạy deadline</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-amber-700/50 flex gap-2">
+                <button id="btn-pray-9-wishes" class="btn-temple flex-1 py-3 rounded-xl font-extrabold text-xs sm:text-sm">
+                    🪔 Dâng Hương Khấn Trọn 9 Điều Này
+                </button>
+                <button class="btn-close-modal px-4 py-3 rounded-xl bg-amber-950 border border-amber-700 text-xs text-amber-200 font-bold">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2B. CẨM NANG HƯỚNG DẪN -->
+    <div id="modal-tutorial" class="ui-layer hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm pointer-auto z-40">
+        <div class="wood-panel w-full max-w-lg rounded-3xl p-5 sm:p-6 max-h-[88vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-amber-700/50 pb-3 mb-3">
+                <h3 class="text-lg sm:text-xl font-bold text-amber-300">🪷 Cẩm Nang Khóa Tu & Lễ Chùa 3D</h3>
+                <button class="btn-close-modal text-amber-300 hover:text-white text-sm font-bold px-2 py-1 rounded-lg bg-amber-900/50">Bỏ qua ✕</button>
+            </div>
+
+            <div class="overflow-y-auto space-y-3 pr-1 text-left text-xs sm:text-sm text-amber-100 flex-1">
+                <div class="bg-amber-950/75 p-3.5 rounded-2xl border border-amber-600/50">
+                    <div class="font-bold text-amber-300 text-sm mb-1.5 flex items-center gap-2">
+                        <span>🧭</span> <span>Cách Điều Khiển & Tương Tác Vật Phẩm</span>
+                    </div>
+                    <ul class="space-y-1.5 text-amber-100/90 list-disc list-inside">
+                        <li><b>Click chuột / Chạm mặt sân:</b> Nhấp lên sân gạch hoặc thảm thiền trong Chánh Điện để nhân vật bước tới.</li>
+                        <li><b>Click vào Laptop / Chồng sách Luật / Bình GYM trong Chánh Điện:</b> Để kiểm tra hệ thống ETAX và đọc tâm nguyện 9 điều!</li>
+                        <li><b>Nút "🧘 Ngồi Thiền Bình Tâm" (trên cùng):</b> Nhân vật tự động xếp bằng chắp tay ngồi thiền thở nhẹ giữa các đồng nghiệp Thuế.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-amber-950/75 p-3.5 rounded-2xl border border-amber-600/50 space-y-2">
+                    <div class="font-bold text-amber-300 text-sm">🙏 5 Hoạt Động Giải Tỏa Áp Lực & Cầu An:</div>
+                    <div>1️⃣ <b>Dâng Hương Lư Đồng:</b> Cầu ETAX mượt, đóng 03-06 đúng hạn, gia đình bình an.</div>
+                    <div>2️⃣ <b>Gõ Mõ Hóa Giải Deadline (30s):</b> Gõ nhịp mõ tụng kinh để hóa giải từng đợt <i>KPI dí, Nợ thuế, Captcha MTT</i>.</div>
+                    <div>3️⃣ <b>Thỉnh Chuông Đại Hồng Chung:</b> Đánh chuông vang rền xua tan mệt mỏi.</div>
+                    <div>4️⃣ <b>Treo Dải Lụa Đỏ / Thả Đèn Hoa Đăng:</b> Viết lời ước nguyện lên cây Bồ Đề và Hồ Sen.</div>
+                    <div>5️⃣ <b>Xin Quẻ Đầu Năm & Tạo Thiệp 1080×1350:</b> Lưu chứng nhận Khóa Tu Bình Tâm 2026!</div>
+                </div>
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-amber-700/50">
+                <button class="btn-close-modal btn-temple w-full py-3 rounded-xl font-bold text-sm sm:text-base">
+                    🌸 Đã Hiểu • Bắt Đầu Trải Nghiệm 🌸
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. HOẠT ĐỘNG 1: THẮP HƯƠNG -->
+    <div id="modal-incense" class="ui-layer hidden items-center justify-center p-4 bg-black/65 pointer-auto z-30">
+        <div class="wood-panel w-full max-w-md rounded-3xl p-6 text-center">
+            <div class="text-3xl mb-1">🪔</div>
+            <h3 class="text-xl font-bold text-amber-300 mb-1">Dâng Hương Cầu Bình Tâm & Thuận Lợi</h3>
+            <p class="text-xs text-amber-100/85 mb-3">Thành tâm chắp tay trước Lư Hương Đồng lớn của Chùa Bác Ái.</p>
+
+            <div class="bg-amber-950/90 border border-amber-600/50 rounded-2xl p-3.5 mb-4 text-left text-xs text-amber-100/95 leading-relaxed">
+                <div class="font-bold text-amber-300 mb-1">🙏 Lời khấn Bình Tâm Cán Bộ Thuế 2026:</div>
+                <p class="italic">"Nam mô A Di Đà Phật! Xin cho gia đình con luôn mạnh khỏe, bình an; công việc tại cơ quan thông suốt: Hệ thống ETAX ổn định, HĐĐT-MTT không lỗi, đối soát LPTB-TMS chuẩn xác, KPI hoàn thành nhẹ nhàng và luôn khỏe mạnh để đi tập GYM!"</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button data-sticks="1" class="btn-incense-pick btn-temple py-3.5 px-2 rounded-2xl font-bold text-sm flex flex-col items-center gap-1">
+                    <span class="text-lg">🕯️ 1 Nén Tâm Hương</span>
+                    <span class="text-[11px] font-normal text-amber-200/85">Nhất tâm định tĩnh</span>
+                </button>
+                <button data-sticks="3" class="btn-incense-pick btn-temple py-3.5 px-2 rounded-2xl font-bold text-sm flex flex-col items-center gap-1">
+                    <span class="text-lg">🕯️🕯️🕯️ 3 Nén Tam Bảo</span>
+                    <span class="text-[11px] font-normal text-amber-200/85">Vững vàng – Thông suốt – Bình an</span>
+                </button>
+            </div>
+            <button class="btn-close-modal text-xs text-amber-300/70 underline py-1">Đóng lại</button>
+        </div>
+    </div>
+
+    <!-- 4. HOẠT ĐỘNG 2: THỈNH CHUÔNG -->
+    <div id="modal-bell" class="ui-layer hidden items-center justify-center p-4 bg-black/65 pointer-auto z-30">
+        <div class="wood-panel w-full max-w-sm rounded-3xl p-6 text-center">
+            <h3 class="text-xl font-bold text-amber-300 mb-1">🔔 Thỉnh Chuông Đại Hồng Chung</h3>
+            <p class="text-[11px] text-amber-200/90 italic mb-1">"Tiếng chuông ngân vang, áp lực báo cáo tan biến..."</p>
+            <p class="text-xs text-amber-100/80 mb-3">Chạm nút <b>Thỉnh Chuông</b> đúng lúc vòng sáng thu vào tâm (<span id="bell-round-text">1/3</span>)</p>
+
+            <div class="relative w-48 h-48 mx-auto my-4 flex items-center justify-center select-none">
+                <div class="w-20 h-20 rounded-full border-4 border-amber-400 bg-amber-900/40 flex items-center justify-center shadow-[0_0_25px_rgba(251,191,36,0.5)]">
+                    <span class="text-3xl">🔔</span>
+                </div>
+                <div id="bell-shrinking-ring" class="absolute rounded-full border-4 border-emerald-300 pointer-events-none" style="width: 170px; height: 170px;"></div>
+            </div>
+
+            <div id="bell-feedback" class="h-6 text-sm font-bold text-amber-200 mb-3">Chờ vòng sáng thu vào...</div>
+
+            <button id="btn-strike-bell" class="btn-temple w-full py-3.5 rounded-2xl font-bold text-base mb-3">
+                🔔 Chạm Thỉnh Chuông
+            </button>
+            <button class="btn-close-modal text-xs text-amber-300/70 underline py-1">Rời Gác Chuông</button>
+        </div>
+    </div>
+
+    <!-- 5. HOẠT ĐỘNG 3: GÕ MÕ TỤNG KINH HÓA GIẢI DEADLINE (30S) -->
+    <div id="modal-woodenfish" class="ui-layer hidden items-center justify-center p-4 bg-black/75 pointer-auto z-30">
+        <div class="wood-panel w-full max-w-md rounded-3xl p-6 text-center">
+            <div class="flex justify-between items-center text-xs text-amber-300 mb-2">
+                <span>⏱️ Thời gian: <b id="mo-timer">30</b>s</span>
+                <span>Điểm Tâm An: <b id="mo-score">0</b>/100</span>
+            </div>
+            <h3 class="text-xl font-bold text-amber-200 mb-1">🪵 Gõ Mõ Bình Tâm • Hóa Giải Deadline</h3>
+            <p class="text-xs text-amber-100/80 mb-2">Chạm vào chiếc Mõ Gỗ khi vòng sáng thu vào tâm để hóa giải từng áp lực công việc.</p>
+
+            <div id="mo-play-area" class="relative w-52 h-52 mx-auto my-2 flex items-center justify-center cursor-pointer select-none">
+                <div id="mo-target-circle" class="w-24 h-24 rounded-full border-4 border-amber-400 bg-amber-950/90 flex flex-col items-center justify-center shadow-lg transition-transform">
+                    <span class="text-3xl">🪵</span>
+                    <span class="text-[11px] text-amber-300 font-bold mt-0.5">CHẠM MÕ</span>
+                </div>
+                <div id="mo-approach-ring" class="absolute rounded-full border-4 border-amber-200/90 pointer-events-none" style="width: 180px; height: 180px;"></div>
+            </div>
+
+            <div id="mo-judgment" class="h-7 text-sm sm:text-base font-extrabold text-emerald-300 mb-2">Hãy thả lỏng hơi thở... Cốc... Cốc...</div>
+
+            <div id="mo-result-box" class="hidden bg-amber-950/90 border border-amber-500 rounded-2xl p-4 mb-3">
+                <div class="text-xs text-amber-300 uppercase">Kết quả khóa tu tĩnh tâm</div>
+                <div class="text-2xl font-extrabold text-amber-200 my-1">Tâm An: <span id="mo-final-score">95</span>/100</div>
+                <p id="mo-praise-text" class="text-xs sm:text-sm text-amber-100 italic"></p>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="btn-mo-finish-early" class="btn-temple flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">Hoàn Tất & Nhận Điểm</button>
+                <button class="btn-close-modal px-4 py-2.5 rounded-xl bg-amber-950 border border-amber-700 text-xs text-amber-300">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. HOẠT ĐỘNG 4: VIẾT LỜI CẦU AN -->
+    <div id="modal-wish" class="ui-layer hidden items-center justify-center p-4 bg-black/70 pointer-auto z-30">
+        <div class="wood-panel w-full max-w-md rounded-3xl p-6">
+            <h3 class="text-xl font-bold text-amber-300 text-center mb-1">🌸 Gửi Gắm Lời Cầu An 2026 🌸</h3>
+            <p class="text-xs text-amber-100/80 text-center mb-3">Chọn nhanh lời cầu nguyện công việc & gia đình hoặc tự viết (tối đa 120 ký tự).</p>
+
+            <div class="flex flex-wrap gap-1.5 mb-3 justify-center">
+                <button class="btn-wish-preset text-[11px] bg-amber-900/75 hover:bg-amber-800 border border-amber-500/50 px-2.5 py-1 rounded-full text-amber-100">ETAX ổn định, HĐĐT-MTT thông suốt!</button>
+                <button class="btn-wish-preset text-[11px] bg-amber-900/75 hover:bg-amber-800 border border-amber-500/50 px-2.5 py-1 rounded-full text-amber-100">Đóng 03-06 đúng hạn, đối soát LPTB-TMS mượt!</button>
+                <button class="btn-wish-preset text-[11px] bg-amber-900/75 hover:bg-amber-800 border border-amber-500/50 px-2.5 py-1 rounded-full text-amber-100">KPI nhẹ nhàng, nợ thuế giảm, kịp giờ đi tập GYM!</button>
+                <button class="btn-wish-preset text-[11px] bg-amber-900/75 hover:bg-amber-800 border border-amber-500/50 px-2.5 py-1 rounded-full text-amber-100">Gia đình mạnh khỏe, bình an, vạn sự cát tường!</button>
+            </div>
+
+            <div class="relative mb-2">
+                <textarea id="textarea-wish" rows="3" maxlength="120" placeholder="Nhập lời cầu an của bạn..."
+                    class="w-full p-3 rounded-2xl bg-amber-950/90 border border-amber-500/60 text-amber-100 text-sm focus:outline-none focus:border-amber-300 resize-none"></textarea>
+                <span id="wish-char-count" class="absolute bottom-2 right-3 text-[11px] text-amber-400/70">0/120</span>
+            </div>
+
+            <div id="wish-error-msg" class="text-xs text-rose-400 font-medium mb-2 hidden"></div>
+
+            <div class="grid grid-cols-2 gap-3 my-3">
+                <button id="btn-submit-ribbon" class="btn-temple py-3 px-2 rounded-2xl text-xs sm:text-sm font-bold flex flex-col items-center gap-1">
+                    <span class="text-xl">🎀</span>
+                    <span>Treo Dải Lụa Đỏ</span>
+                    <span class="text-[10px] font-normal text-amber-200/80">Lên Cây Bồ Đề</span>
+                </button>
+                <button id="btn-submit-lantern" class="btn-temple py-3 px-2 rounded-2xl text-xs sm:text-sm font-bold flex flex-col items-center gap-1">
+                    <span class="text-xl">🪷</span>
+                    <span>Thả Đèn Hoa Đăng</span>
+                    <span class="text-[10px] font-normal text-amber-200/80">Xuống mặt Hồ Sen</span>
+                </button>
+            </div>
+
+            <div class="text-center mt-2">
+                <button class="btn-close-modal text-xs text-amber-300/70 underline py-1">Đóng lại</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. HOẠT ĐỘNG 5: XIN QUẺ ĐẦU NĂM -->
+    <div id="modal-fortune" class="ui-layer hidden items-center justify-center p-4 bg-black/70 pointer-auto z-30">
+        <div class="wood-panel w-full max-w-md rounded-3xl p-6 text-center">
+            <h3 class="text-xl font-bold text-amber-300 mb-1">🎋 Gieo Quẻ Bình Tâm 2026</h3>
+            <p class="text-xs text-amber-100/80 mb-4">Chạm hoặc nhấn giữ để lắc ống xăm tre, nhận quẻ lành đầu năm.</p>
+
+            <div id="fortune-cylinder-visual" class="w-28 h-36 mx-auto my-3 rounded-2xl bg-gradient-to-b from-amber-700 to-amber-950 border-2 border-amber-400 flex flex-col items-center justify-center shadow-xl relative transition-transform">
+                <div class="flex gap-1 -mt-8 mb-2">
+                    <span class="w-2 h-10 bg-amber-300 rounded-t border border-red-700"></span>
+                    <span class="w-2 h-12 bg-amber-200 rounded-t border border-red-700"></span>
+                    <span class="w-2 h-9 bg-amber-300 rounded-t border border-red-700"></span>
+                </div>
+                <div class="text-xs font-bold text-amber-200 tracking-widest border border-amber-400/50 px-2 py-1 rounded">QUẺ LÀNH</div>
+            </div>
+
+            <div class="w-48 h-2.5 bg-amber-950 rounded-full mx-auto mb-4 overflow-hidden border border-amber-700">
+                <div id="fortune-shake-bar" class="h-full bg-amber-400 w-0 transition-all duration-75"></div>
+            </div>
+
+            <div id="fortune-result-card" class="hidden bg-gradient-to-b from-red-950 to-amber-950 border-2 border-amber-400 rounded-2xl p-4 mb-4 text-center shadow-inner">
+                <div id="fortune-title" class="text-sm font-extrabold text-amber-300 uppercase tracking-wider mb-1">Quẻ Thượng Cát</div>
+                <p id="fortune-poem" class="text-sm sm:text-base text-amber-100 font-medium leading-relaxed"></p>
+            </div>
+
+            <button id="btn-shake-fortune" class="btn-temple w-full py-3.5 rounded-2xl font-bold text-sm sm:text-base mb-2 select-none">
+                🎍 Lắc Ống Xăm Nhận Quẻ Lành
+            </button>
+
+            <div class="text-[11px] text-amber-300/75 italic mb-2">* Mang tính giải trí - Gieo năng lượng tích cực</div>
+            <button class="btn-close-modal text-xs text-amber-300/70 underline py-1">Đóng lại</button>
+        </div>
+    </div>
+
+    <!-- 8. SỔ CẦU AN CỦA TÔI -->
+    <div id="modal-notebook" class="ui-layer hidden items-center justify-center p-4 bg-black/75 pointer-auto z-40">
+        <div class="wood-panel w-full max-w-lg rounded-3xl p-5 sm:p-6 max-h-[88vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-amber-700/50 pb-3 mb-3">
+                <h3 class="text-lg sm:text-xl font-bold text-amber-300">📜 Sổ Cầu An & Hồ Sơ Bình Tâm</h3>
+                <button class="btn-close-modal text-amber-300 hover:text-white text-xl font-bold px-2">✕</button>
+            </div>
+
+            <div class="overflow-y-auto space-y-4 pr-1 text-xs sm:text-sm flex-1">
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-amber-950/70 p-3 rounded-2xl border border-amber-700/40">
+                        <div class="text-amber-400 text-[11px]">Họ tên</div>
+                        <div id="nb-player-name" class="font-bold text-amber-100 truncate mt-0.5">Cán bộ Thuế</div>
+                    </div>
+                    <div class="bg-amber-950/70 p-3 rounded-2xl border border-amber-700/40">
+                        <div class="text-amber-400 text-[11px]">Hương đã dâng</div>
+                        <div class="font-bold text-amber-200 mt-0.5"><span id="nb-incense-count">0</span> nén</div>
+                    </div>
+                    <div class="bg-amber-950/70 p-3 rounded-2xl border border-amber-700/40">
+                        <div class="text-amber-400 text-[11px]">Điểm Tâm An</div>
+                        <div class="font-bold text-emerald-300 mt-0.5"><span id="nb-best-taman">0</span>/100</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-amber-300 mb-1.5">🌸 Lời cầu an đã gửi (<span id="nb-wishes-count">0</span>):</h4>
+                    <div id="nb-wishes-list" class="space-y-2 max-h-36 overflow-y-auto"></div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-amber-300 mb-1.5">🎋 Quẻ lành đã nhận (<span id="nb-fortunes-count">0</span>):</h4>
+                    <div id="nb-fortunes-list" class="space-y-2 max-h-36 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-amber-700/50 flex justify-between items-center">
+                <button id="btn-notebook-to-share" class="btn-temple px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold">🌸 Xuất Thiệp Cầu An 2026</button>
+                <button class="btn-close-modal px-4 py-2 rounded-xl bg-amber-950 border border-amber-700 text-xs text-amber-200">Đóng Sổ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. CHIA SẺ THIỆP CẦU AN 1080x1350 -->
+    <div id="modal-share" class="ui-layer hidden items-center justify-center p-4 bg-black/80 pointer-auto z-40">
+        <div class="wood-panel w-full max-w-md rounded-3xl p-5 text-center max-h-[92vh] flex flex-col">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-lg font-bold text-amber-300">🌸 Thiệp “Bình Tâm Cán Bộ Thuế 2026”</h3>
+                <button class="btn-close-modal text-amber-300 text-xl font-bold px-2">✕</button>
+            </div>
+            <p class="text-xs text-amber-100/80 mb-2">Ảnh dọc 1080×1350 kết hợp khung cảnh 3D, sớ cầu an ETAX & điểm Tâm An.</p>
+
+            <div class="flex-1 overflow-hidden flex items-center justify-center bg-black/40 rounded-2xl p-2 border border-amber-700/50 mb-3">
+                <canvas id="share-canvas" width="1080" height="1350" class="hidden"></canvas>
+                <img id="share-preview-img" alt="Thiệp Cầu An 2026" class="max-h-[48vh] w-auto rounded-xl shadow-lg object-contain" />
+            </div>
+
+            <div class="flex gap-2">
+                <button id="btn-native-share" class="btn-temple flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm">📤 Chia Sẻ Ngay</button>
+                <button id="btn-download-card" class="btn-temple flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm">⬇️ Tải Ảnh (1080×1350)</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        /* ============================================================================
+         * PHẦN 1: DỮ LIỆU NGƯỜI CHƠI, 11 TAG "HOT" NGÀNH THUẾ & 40 QUẺ BÌNH TÂM
+         * ============================================================================ */
+        const STORAGE_KEY = 'chua_bac_ai_tax_2026_v3';
+        const userState = {
+            name: 'Cán bộ Thuế Bình Tâm',
+            style: 'tax_female', // 'tax_female' | 'tax_male' | 'tax_senior' | 'ao_lam'
+            incenseCount: 3,
+            bestTamAn: 96,
+            wishes: [
+                'Hệ thống ETAX ổn định, HĐĐT - MTT (Captcha) thông suốt!',
+                'KPI nhẹ nhàng, đủ chỉ tiêu, có sức khỏe đi tập GYM!'
+            ],
+            fortunes: [
+                { title: 'Quẻ Thượng Cát ETAX', text: 'Hệ thống thông suốt cả năm, đối soát LPTB - TMS khớp lệnh một lần ăn ngay.' }
+            ],
+            tutorialDone: false
+        };
+
+        function loadUserData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) Object.assign(userState, JSON.parse(raw));
+            } catch (e) { console.warn(e); }
+        }
+        function saveUserData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
+            } catch (e) { console.warn(e); }
+        }
+        loadUserData();
+
+        // Danh sách 11 nhãn HOT đúng theo bức ảnh "Khóa Tu Bình Tâm Cán Bộ Thuế 2026"
+        const TAX_HOT_TOPICS = [
+            { hot: true, icon: '📄', text: 'PNN' },
+            { hot: true, icon: '📅', text: 'Đóng 03 - 06' },
+            { hot: true, icon: '🪙', text: 'Nợ thuế' },
+            { hot: true, icon: '🔍', text: 'Kiểm tra nội bộ' },
+            { hot: true, icon: '📈', text: 'KPI dí' },
+            { hot: true, icon: '💻', text: 'Tỷ lệ ETAX' },
+            { hot: true, icon: '📑', text: 'Đối soát chứng từ LPTB - TMS' },
+            { hot: true, icon: '🔄', text: 'Hoá đơn MTT (Captcha)' },
+            { hot: true, icon: '📢', text: 'Giải quyết phản ánh, kiến nghị NNT' },
+            { hot: true, icon: '📚', text: 'Báo cáo ngập mặt' },
+            { hot: true, icon: '⏰', text: 'Đi làm T7 - CN' },
+            { hot: false, icon: '🙏', text: 'A Di Đà Phật... ETAX mượt mà!' },
+            { hot: false, icon: '💪', text: 'Chạy xong deadline còn đi tập GYM!' },
+            { hot: false, icon: '🪷', text: 'Tâm bất biến giữa dòng biểu mẫu!' }
+        ];
+
+        const BAD_WORDS = ['đụ', 'địt', 'lồn', 'cặc', 'đéo', 'chó đẻ', 'khốn nạn', 'fuck', 'shit', 'bitch', 'đĩ', 'cứt', 'đm', 'vcl', 'vl'];
+        function containsProfanity(text) {
+            const lower = text.toLowerCase();
+            return BAD_WORDS.some(w => lower.includes(w));
+        }
+
+        const FORTUNE_LIST = [
+            { title: "Quẻ ETAX Thông Suốt", text: "Mọi phiên đăng nhập đều mượt mà, dữ liệu đồng bộ tức thì, cả phòng nở nụ cười tươi." },
+            { title: "Quẻ Captcha Một Chạm", text: "HĐĐT khởi tạo từ máy tính tiền trôi chảy, mã Captcha nhìn một lần là gõ trúng ngay." },
+            { title: "Quẻ Đối Soát Chuẩn Chỉnh", text: "Chứng từ LPTB – TMS khớp từng con số, đóng kỳ 03 – 06 nhẹ tựa lông hồng." },
+            { title: "Quẻ NNT Thấu Hiểu", text: "Giải quyết phản ánh, kiến nghị của Người nộp thuế êm đẹp, nhận về lời cảm ơn chân thành." },
+            { title: "Quẻ KPI Vượt Đỉnh", text: "Chỉ tiêu hoàn thành sớm kế hoạch, thu hồi nợ thuế thuận lợi, cuối tuần thảnh thơi." },
+            { title: "Quẻ Báo Cáo Gọn Gàng", text: "Mẫu biểu tinh gọn, hàm Excel không một lỗi #REF!, tổng hợp số liệu nhanh bất ngờ." },
+            { title: "Quẻ Kiểm Tra An Toàn", text: "Hồ sơ lưu trữ ngăn nắp, nắm chắc Luật QLT & NĐ 252/2026, kiểm tra nội bộ đạt điểm tối đa." },
+            { title: "Quẻ Khỏe Đẹp Tập GYM", text: "Đúng 17h30 hoàn thành công việc, tràn đầy năng lượng nâng tạ hồng và giữ dáng khỏe đẹp." },
+            { title: "Quẻ Tâm An Trí Sáng", text: "Giữa trăm công nghìn việc lòng vẫn tĩnh như mặt hồ sen, quyết định nào cũng sáng suốt." },
+            { title: "Quẻ Đồng Nghiệp Đoàn Kết", text: "Anh chị em trong đội hỗ trợ nhau nhịp nhàng, việc khó mấy cùng chung tay cũng hóa dễ." },
+            { title: "Quẻ Gia Đạo Bình An", text: "Hậu phương vững chắc, cha mẹ khỏe mạnh, bữa cơm tối sum vầy đầy ắp tiếng cười." },
+            { title: "Quẻ Cuối Tuần Thảnh Thơi", text: "Tạm biệt cảnh làm thêm Thứ 7 - Chủ Nhật, dành trọn cuối tuần nghỉ ngơi tái tạo năng lượng." }
+        ];
+
+        /* ============================================================================
+         * PHẦN 2: ÂM THANH CHÙA BÁC ÁI (WEB AUDIO API - MÕ GỖ, CHUÔNG GIA TRÌ, CHUÔNG ĐỒNG)
+         * ============================================================================ */
+        class TempleAudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.isMuted = false;
+                this.masterGain = null;
+            }
+            init() {
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = 0.65;
+                this.masterGain.connect(this.ctx.destination);
+
+                this.startWindAndLeaves();
+                this.startChantAndMoBackground();
+            }
+            toggleMute() {
+                if (!this.ctx) this.init();
+                this.isMuted = !this.isMuted;
+                if (this.masterGain && this.ctx) {
+                    this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.65, this.ctx.currentTime, 0.15);
+                }
+                return this.isMuted;
+            }
+            startWindAndLeaves() {
+                const bufferSize = this.ctx.sampleRate * 3;
+                const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+                const whiteNoise = this.ctx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer;
+                whiteNoise.loop = true;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 320;
+                filter.Q.value = 3.0;
+
+                const windGain = this.ctx.createGain();
+                windGain.gain.value = 0.024;
+
+                whiteNoise.connect(filter);
+                filter.connect(windGain);
+                windGain.connect(this.masterGain);
+                whiteNoise.start();
+            }
+            startChantAndMoBackground() {
+                const freqs = [110, 146.83, 164.81, 220];
+                const formantFilter = this.ctx.createBiquadFilter();
+                formantFilter.type = 'lowpass';
+                formantFilter.frequency.value = 270;
+
+                const chantGain = this.ctx.createGain();
+                chantGain.gain.value = 0.032;
+
+                freqs.forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    osc.type = idx % 2 === 0 ? 'sawtooth' : 'triangle';
+                    osc.frequency.value = f;
+                    const subGain = this.ctx.createGain();
+                    subGain.gain.value = idx === 0 ? 0.4 : 0.18;
+                    osc.connect(subGain);
+                    subGain.connect(formantFilter);
+                    osc.start();
+                });
+
+                formantFilter.connect(chantGain);
+                chantGain.connect(this.masterGain);
+
+                let beat = 0;
+                setInterval(() => {
+                    if (!this.ctx || this.isMuted) return;
+                    beat++;
+                    this.playWoodenFish(true, 0.12);
+                    if (beat % 8 === 0) this.playSingingBowl(0.18);
+                }, 880);
+            }
+            playSingingBowl(vol = 0.25) {
+                if (!this.ctx || this.isMuted) return;
+                const now = this.ctx.currentTime;
+                [528, 1056, 1584].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime((vol / (i + 1)) * 0.45, now + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0 - i * 0.6);
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start(now);
+                    osc.stop(now + 3.1);
+                });
+            }
+            playBell(vol = 0.65) {
+                if (!this.ctx || this.isMuted) return;
+                const now = this.ctx.currentTime;
+                const base = 174;
+                [1, 2.0, 2.98, 4.15].forEach((r, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(base * r, now);
+                    gain.gain.setValueAtTime(0.001, now);
+                    gain.gain.linearRampToValueAtTime((vol / (idx + 1)) * 0.4, now + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.6 - idx * 0.7);
+                    osc.connect(gain);
+                    gain.connect(this.masterGain);
+                    osc.start(now);
+                    osc.stop(now + 4.7);
+                });
+            }
+            playWoodenFish(isGood = true, vol = 0.45) {
+                if (!this.ctx || this.isMuted) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const filter = this.ctx.createBiquadFilter();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                const pitch = isGood ? 495 : 380;
+                osc.frequency.setValueAtTime(pitch, now);
+                osc.frequency.exponentialRampToValueAtTime(pitch * 0.62, now + 0.09);
+
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(pitch, now);
+                filter.Q.value = 5.5;
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(vol, now + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+            playChimeSuccess() {
+                this.playSingingBowl(0.35);
+            }
+        }
+        const audio = new TempleAudioEngine();
+
+        /* ============================================================================
+         * PHẦN 3: HỆ THỐNG TEXTURE CANVAS CHUYÊN SÂU (ÁO THUẾ, BĂNG RÔN, LAPTOP, SÁCH LUẬT)
+         * ============================================================================ */
+        // 1. Texture lưng áo đồng phục Cán bộ Thuế: nền xanh tím than, huy hiệu tròn đỏ vàng + chữ "THUẾ" vàng đậm
+        function createTaxBackTexture(bgColor = '#172554') {
+            const cvs = document.createElement('canvas');
+            cvs.width = 256; cvs.height = 256;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, 256, 256);
+
+            // Viền chỉ may tinh tế
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(12, 12, 232, 232);
+
+            // Huy hiệu ngành Thuế tròn đỏ viền vàng ở giữa trên
+            const cx = 128, cy = 88, r = 28;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#dc2626';
+            ctx.fill();
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#fbbf24';
+            ctx.stroke();
+
+            // Ngôi sao / biểu tượng vàng bên trong huy hiệu
+            ctx.fillStyle = '#fef08a';
+            ctx.font = 'bold 26px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('★', cx, cy + 1);
+
+            // Dòng chữ "THUẾ" màu vàng in hoa đậm đúng như ảnh
+            ctx.fillStyle = '#facc15';
+            ctx.font = '900 48px "Be Vietnam Pro", sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.65)';
+            ctx.shadowBlur = 4;
+            ctx.fillText('THUẾ', cx, 152);
+
+            const tex = new THREE.CanvasTexture(cvs);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        // 2. Texture Băng rôn "KHÓA TU: BÌNH TÂM CÁN BỘ THUẾ 2026"
+        function createBannerTexture(title, subtitle, bgHex = '#7f1d1d') {
+            const cvs = document.createElement('canvas');
+            cvs.width = 1024; cvs.height = 256;
+            const ctx = cvs.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 1024, 256);
+            grad.addColorStop(0, bgHex);
+            grad.addColorStop(0.5, '#991b1b');
+            grad.addColorStop(1, bgHex);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1024, 256);
+
+            // Khung viền vàng cổ truyền
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(14, 14, 996, 228);
+            ctx.lineWidth = 3;
+            ctx.strokeRect(26, 26, 972, 204);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#fef08a';
+            ctx.font = '800 50px "Be Vietnam Pro", sans-serif';
+            ctx.shadowColor = 'rgba(0,0,0,0.7)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(title, 512, 112);
+
+            if (subtitle) {
+                ctx.fillStyle = '#fed7aa';
+                ctx.font = '600 26px "Be Vietnam Pro", sans-serif';
+                ctx.fillText(subtitle, 512, 178);
+            }
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        // 3. Texture màn hình Laptop xanh lá hiện 6 mục tích xanh như trong ảnh
+        function createLaptopScreenTexture() {
+            const cvs = document.createElement('canvas');
+            cvs.width = 512; cvs.height = 384;
+            const ctx = cvs.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 0, 384);
+            grad.addColorStop(0, '#ecfdf5');
+            grad.addColorStop(1, '#bbf7d0');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 384);
+
+            ctx.fillStyle = '#065f46';
+            ctx.fillRect(0, 0, 512, 54);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px "Be Vietnam Pro", sans-serif';
+            ctx.fillText('  HỆ THỐNG NGHIỆP VỤ THUẾ 2026', 16, 36);
+
+            const items = [
+                'ETAX (Ổn định 100%)',
+                'PNN (Đã hoàn thành)',
+                'LPTB - TMS (Khớp đúng)',
+                'HĐĐT - MTT (Thông suốt)',
+                'KPI (Đạt chỉ tiêu)',
+                'Báo cáo (Đã tổng hợp)'
+            ];
+            ctx.font = 'bold 28px "Be Vietnam Pro", sans-serif';
+            items.forEach((it, idx) => {
+                const y = 102 + idx * 46;
+                ctx.fillStyle = '#10b981';
+                ctx.fillRect(28, y - 24, 30, 30);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText('✓', 33, y + 1);
+                ctx.fillStyle = '#064e3b';
+                ctx.fillText(it, 74, y);
+            });
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        // 4. Texture Gáy sách Luật Thuế
+        function createBookSpineTexture(label, bgHex, textHex = '#1e293b') {
+            const cvs = document.createElement('canvas');
+            cvs.width = 512; cvs.height = 96;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = bgHex;
+            ctx.fillRect(0, 0, 512, 96);
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(3, 3, 506, 90);
+            ctx.fillStyle = textHex;
+            ctx.font = '800 38px "Be Vietnam Pro", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, 256, 50);
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        // 5. Texture Tranh Hào Quang Đức Phật & Hoa Sen hậu điện
+        function createBuddhaMuralTexture() {
+            const cvs = document.createElement('canvas');
+            cvs.width = 512; cvs.height = 512;
+            const ctx = cvs.getContext('2d');
+            const rGrad = ctx.createRadialGradient(256, 256, 20, 256, 256, 256);
+            rGrad.addColorStop(0, '#fef08a');
+            rGrad.addColorStop(0.35, '#f59e0b');
+            rGrad.addColorStop(0.7, '#b45309');
+            rGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = rGrad;
+            ctx.fillRect(0, 0, 512, 512);
+
+            ctx.strokeStyle = 'rgba(254, 240, 138, 0.55)';
+            ctx.lineWidth = 3;
+            for (let r = 50; r <= 230; r += 36) {
+                ctx.beginPath();
+                ctx.arc(256, 256, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            for (let a = 0; a < 24; a++) {
+                const ang = (a / 24) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(256 + Math.cos(ang) * 40, 256 + Math.sin(ang) * 40);
+                ctx.lineTo(256 + Math.cos(ang) * 240, 256 + Math.sin(ang) * 240);
+                ctx.stroke();
+            }
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        /* ============================================================================
+         * PHẦN 4: DỰNG CẢNH 3D CHÙA BÁC ÁI & GIẢNG ĐƯỜNG KHÓA TU BÌNH TÂM 2026
+         * ============================================================================ */
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xfdba74);
+        scene.fog = new THREE.FogExp2(0xfed7aa, 0.006);
+
+        const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 220);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.32;
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xfffbeb, 0.95);
+        scene.add(ambientLight);
+        const hemiLight = new THREE.HemisphereLight(0xffedd5, 0x92400e, 1.25);
+        hemiLight.position.set(0, 50, 0);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff3c4, 2.2);
+        dirLight.position.set(24, 38, 22);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -35;
+        dirLight.shadow.camera.right = 35;
+        dirLight.shadow.camera.top = 35;
+        dirLight.shadow.camera.bottom = -35;
+        scene.add(dirLight);
+
+        const hallWarmLight = new THREE.PointLight(0xffb703, 2.6, 28);
+        hallWarmLight.position.set(0, 6.5, -13);
+        scene.add(hallWarmLight);
+
+        const colliders = [];
+        function addCollider(x, z, r) { colliders.push({ x, z, r }); }
+
+        // Sân gạch hoa kẻ ô cổ kính kết hợp sàn gỗ ấm trong Chánh Điện
+        function createBrickCourtyardTexture() {
+            const cvs = document.createElement('canvas');
+            cvs.width = 512; cvs.height = 512;
+            const c = cvs.getContext('2d');
+            c.fillStyle = '#e5dccb';
+            c.fillRect(0, 0, 512, 512);
+            const tileSize = 128;
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const x = col * tileSize, y = row * tileSize;
+                    const isAlt = (row + col) % 2 === 1;
+                    c.fillStyle = isAlt ? '#c25938' : '#f5ebd6';
+                    c.fillRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+                    c.strokeStyle = isAlt ? '#f4d08f' : '#b85232';
+                    c.lineWidth = 3;
+                    c.strokeRect(x + 12, y + 12, tileSize - 24, tileSize - 24);
+                }
+            }
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        const brickTex = createBrickCourtyardTexture();
+        brickTex.wrapS = brickTex.wrapT = THREE.RepeatWrapping;
+        brickTex.repeat.set(14, 16);
+
+        const MAT = {
+            groundBrick: new THREE.MeshStandardMaterial({ map: brickTex, roughness: 0.78 }),
+            woodFloor: new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.45 }),
+            grass: new THREE.MeshStandardMaterial({ color: 0x4d7c0f, roughness: 0.9 }),
+            stone: new THREE.MeshStandardMaterial({ color: 0xe7e5e4, roughness: 0.65 }),
+            woodRed: new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 }),
+            woodDark: new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 }),
+            roofTile: new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.48 }),
+            gold: new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.58, roughness: 0.22 }),
+            bronze: new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.52, roughness: 0.32 }),
+            taxNavy: new THREE.MeshStandardMaterial({ color: 0x172554, roughness: 0.45 }),
+            taxBackMat: new THREE.MeshStandardMaterial({ map: createTaxBackTexture('#172554'), roughness: 0.45 }),
+            aoLamBackMat: new THREE.MeshStandardMaterial({ color: 0x0891b2, roughness: 0.55 }),
+            skin: new THREE.MeshStandardMaterial({ color: 0xffdcb8, roughness: 0.48 }),
+            hairDark: new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5 }),
+            hairSilver: new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.45 }),
+            pinkGym: new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.35 })
+        };
+
+        // Mặt cỏ bao quanh & Sân gạch hoa
+        const outerGrass = new THREE.Mesh(new THREE.PlaneGeometry(180, 180), MAT.grass);
+        outerGrass.rotation.x = -Math.PI / 2;
+        outerGrass.position.y = -0.05;
+        scene.add(outerGrass);
+
+        const courtyard = new THREE.Mesh(new THREE.PlaneGeometry(54, 64), MAT.groundBrick);
+        courtyard.rotation.x = -Math.PI / 2;
+        courtyard.receiveShadow = true;
+        scene.add(courtyard);
+
+        // 1. CỔNG TAM QUAN CHÙA BÁC ÁI (Z = 22)
+        const gateGroup = new THREE.Group();
+        gateGroup.position.set(0, 0, 22);
+        scene.add(gateGroup);
+        [-6.8, -2.8, 2.8, 6.8].forEach(px => {
+            const p = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 6.0, 12), MAT.woodRed);
+            p.position.set(px, 3.0, 0);
+            p.castShadow = true;
+            gateGroup.add(p);
+            addCollider(px, 22, 0.7);
+        });
+        const gateRoof = new THREE.Mesh(new THREE.ConeGeometry(11.5, 2.2, 4), MAT.roofTile);
+        gateRoof.rotation.y = Math.PI / 4;
+        gateRoof.scale.set(1.45, 1, 0.42);
+        gateRoof.position.set(0, 6.8, 0);
+        gateGroup.add(gateRoof);
+
+        const gateSignMat = new THREE.MeshBasicMaterial({
+            map: createBannerTexture('CHÙA BÁC ÁI', 'CỔNG TAM QUAN • TÂM AN VẠN SỰ AN')
+        });
+        const gateSign = new THREE.Mesh(new THREE.BoxGeometry(6.8, 1.4, 0.25), gateSignMat);
+        gateSign.position.set(0, 5.1, 0.25);
+        gateGroup.add(gateSign);
+
+        // 2. LƯ HƯƠNG ĐỒNG LỚN GIỮA SÂN (X = 0, Z = 5.5)
+        const burnerGroup = new THREE.Group();
+        burnerGroup.position.set(0, 0, 5.5);
+        scene.add(burnerGroup);
+        addCollider(0, 5.5, 1.35);
+
+        const burnerBase = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.45, 0.4, 16), MAT.stone);
+        burnerBase.position.y = 0.2;
+        burnerGroup.add(burnerBase);
+
+        const burnerBody = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 0.82, 1.25, 18), MAT.bronze);
+        burnerBody.position.y = 1.0;
+        burnerBody.castShadow = true;
+        burnerGroup.add(burnerBody);
+
+        const ashBed = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.95, 0.95, 0.1, 16),
+            new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.9 })
+        );
+        ashBed.position.y = 1.6;
+        burnerGroup.add(ashBed);
+
+        const incenseSticksGroup = new THREE.Group();
+        incenseSticksGroup.position.y = 1.62;
+        burnerGroup.add(incenseSticksGroup);
+
+        function spawnIncenseStick(offsetX = 0, offsetZ = 0) {
+            const stick = new THREE.Group();
+            stick.position.set(offsetX, 0, offsetZ);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.75, 6), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+            stem.position.y = 0.37;
+            stick.add(stem);
+            const tip = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffea00 }));
+            tip.position.y = 0.76;
+            stick.add(tip);
+            incenseSticksGroup.add(stick);
+        }
+        // Cắm sẵn 7 nén hương cháy đỏ trên lư
+        for (let i = 0; i < 7; i++) {
+            spawnIncenseStick((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.4);
+        }
+
+        // 3. ĐẠI HÙNG BẢO ĐIỆN & GIẢNG ĐƯỜNG KHÓA TU BÌNH TÂM CÁN BỘ THUẾ 2026 (Z = -13)
+        const hallGroup = new THREE.Group();
+        hallGroup.position.set(0, 0, -13);
+        scene.add(hallGroup);
+
+        // Sàn gỗ ấm áp rộng rãi đúng như trong tranh
+        const hallPlatform = new THREE.Mesh(new THREE.BoxGeometry(28, 0.55, 19), MAT.woodFloor);
+        hallPlatform.position.y = 0.275;
+        hallPlatform.receiveShadow = true;
+        hallGroup.add(hallPlatform);
+
+        // 6 cột gỗ lớn hai bên Chánh Điện
+        [-12, -7.5, 7.5, 12].forEach(cx => {
+            [-7, 0, 7].forEach(cz => {
+                const col = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 7.5, 12), MAT.woodDark);
+                col.position.set(cx, 4.0, cz);
+                col.castShadow = true;
+                hallGroup.add(col);
+            });
+        });
+
+        // Mái chùa cong 2 tầng bề thế
+        const roof1 = new THREE.Mesh(new THREE.ConeGeometry(21.5, 3.2, 4), MAT.roofTile);
+        roof1.rotation.y = Math.PI / 4;
+        roof1.scale.set(1.22, 1, 0.88);
+        roof1.position.set(0, 8.8, 0);
+        hallGroup.add(roof1);
+
+        const roof2 = new THREE.Mesh(new THREE.ConeGeometry(16.5, 2.8, 4), MAT.roofTile);
+        roof2.rotation.y = Math.PI / 4;
+        roof2.scale.set(1.22, 1, 0.88);
+        roof2.position.set(0, 11.2, 0);
+        hallGroup.add(roof2);
+
+        // BĂNG RÔN ĐỎ TRÊN CAO ĐÚNG NHƯ TRANH: KHÓA TU “BÌNH TÂM CÁN BỘ THUẾ 2026”
+        const mainBannerMat = new THREE.MeshBasicMaterial({
+            map: createBannerTexture(
+                'KHÓA TU “BÌNH TÂM CÁN BỘ THUẾ 2026”',
+                'Giữ vững chuyên môn – Vượt chông công việc – Hoàn thành KPI – Vẫn khỏe để chạy deadline'
+            )
+        });
+        const mainBannerMesh = new THREE.Mesh(new THREE.BoxGeometry(15.6, 2.3, 0.2), mainBannerMat);
+        mainBannerMesh.position.set(0, 6.55, 6.8);
+        hallGroup.add(mainBannerMesh);
+
+        // Bức tường hậu điện & Tranh hào quang Mandala sau lưng Đức Phật
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(24, 7.5, 0.4), MAT.woodDark);
+        backWall.position.set(0, 4.0, -8.5);
+        hallGroup.add(backWall);
+
+        const muralMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(11.5, 6.2),
+            new THREE.MeshBasicMaterial({ map: createBuddhaMuralTexture() })
+        );
+        muralMesh.position.set(0, 4.4, -8.25);
+        hallGroup.add(muralMesh);
+
+        // TÔN TƯỢNG ĐỨC PHẬT THÍCH CA VÀNG TỎA HÀO QUANG TRONG CHÁNH ĐIỆN
+        const buddhaGroup = new THREE.Group();
+        buddhaGroup.position.set(0, 0.55, -6.2);
+        hallGroup.add(buddhaGroup);
+        addCollider(0, -19.2, 2.8);
+
+        // Bệ tòa sen vàng
+        const altarBox = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.3, 3.4), MAT.woodRed);
+        altarBox.position.y = 0.65;
+        buddhaGroup.add(altarBox);
+
+        const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.5, 0.65, 20), MAT.gold);
+        lotusBase.position.y = 1.62;
+        buddhaGroup.add(lotusBase);
+
+        // Thân & Đầu Đức Phật
+        const buddhaTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.25, 2.2, 18), MAT.gold);
+        buddhaTorso.position.y = 2.95;
+        buddhaGroup.add(buddhaTorso);
+
+        const buddhaHead = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 24), MAT.gold);
+        buddhaHead.position.y = 4.55;
+        buddhaGroup.add(buddhaHead);
+
+        const ushnisha = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), MAT.gold);
+        ushnisha.position.set(0, 5.18, 0);
+        buddhaGroup.add(ushnisha);
+
+        // Vòng Hào Quang phát sáng sau đầu Phật
+        const haloRing = new THREE.Mesh(
+            new THREE.RingGeometry(1.1, 1.65, 32),
+            new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide })
+        );
+        haloRing.position.set(0, 4.45, -0.55);
+        buddhaGroup.add(haloRing);
+
+        // Chiếc Mõ Gỗ & Chuông Gia Trì đặt trước bàn Phật (X = 2.4, Z = -16.5)
+        const moAltarGroup = new THREE.Group();
+        moAltarGroup.position.set(2.4, 0.55, -3.5);
+        hallGroup.add(moAltarGroup);
+        const moTable = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.7, 1.0), MAT.woodRed);
+        moTable.position.y = 0.35;
+        moAltarGroup.add(moTable);
+        const moWoodMesh = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.35 }));
+        moWoodMesh.scale.set(1.2, 0.85, 1.0);
+        moWoodMesh.position.set(-0.3, 0.88, 0);
+        moAltarGroup.add(moWoodMesh);
+        const bowlMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.2, 0.25, 16), MAT.gold);
+        bowlMesh.position.set(0.35, 0.82, 0);
+        moAltarGroup.add(bowlMesh);
+
+        /* ============================================================================
+         * PHẦN 5: BỘ VẬT PHẨM ĐẶC TRƯNG TỪ TRANH (CHỒNG SÁCH LUẬT, LAPTOP ETAX, LY THUẾ, TẠ GYM)
+         * ============================================================================ */
+        const interactiveProps = [];
+
+        // A. Góc Trái Tiền Đường (X = -4.8, Z = -6.2): Chồng 6 cuốn sách Luật + Laptop ETAX + Ly THUẾ + Chậu cây
+        const taxDeskGroup = new THREE.Group();
+        taxDeskGroup.position.set(-4.8, 0.55, 6.2); // Tương đương Z = -6.8 trong thế giới
+        hallGroup.add(taxDeskGroup);
+
+        // Bàn gỗ thấp
+        const lowDesk = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.35, 2.2), MAT.woodDark);
+        lowDesk.position.y = 0.175;
+        taxDeskGroup.add(lowDesk);
+
+        // Chồng 6 cuốn sách Luật QLT, NĐ 252/2026, TT 89/2026, TT 111/2021, NĐ 10/2022, NĐ 103/2024
+        const bookSpecs = [
+            { label: 'NĐ 103/2024', color: '#fde047' },
+            { label: 'NĐ 10/2022', color: '#facc15' },
+            { label: 'TT 111/2021', color: '#fbbf24' },
+            { label: 'TT 89/2026', color: '#f59e0b' },
+            { label: 'NĐ 252/2026', color: '#fde68a' },
+            { label: 'Luật QLT', color: '#fca5a5' }
+        ];
+        bookSpecs.forEach((b, idx) => {
+            const spineMat = new THREE.MeshStandardMaterial({ map: createBookSpineTexture(b.label, b.color) });
+            const coverMat = new THREE.MeshStandardMaterial({ color: b.color, roughness: 0.5 });
+            const bookMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(1.35, 0.22, 0.95),
+                [coverMat, coverMat, coverMat, coverMat, spineMat, coverMat]
+            );
+            bookMesh.position.set(-1.35, 0.46 + idx * 0.23, 0);
+            bookMesh.rotation.y = (idx % 2 === 0 ? 0.04 : -0.04);
+            bookMesh.castShadow = true;
+            bookMesh.userData = { propType: 'books' };
+            taxDeskGroup.add(bookMesh);
+            interactiveProps.push(bookMesh);
+        });
+
+        // Chiếc Laptop mở màn hình xanh lá 6 mục ETAX/PNN/LPTB-TMS/HĐĐT-MTT/KPI/Báo cáo
+        const laptopBase = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 0.08, 1.0),
+            new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.3 })
+        );
+        laptopBase.position.set(0.35, 0.39, 0.15);
+        taxDeskGroup.add(laptopBase);
+
+        const laptopScreen = new THREE.Mesh(
+            new THREE.BoxGeometry(1.4, 1.05, 0.06),
+            [
+                MAT.stone, MAT.stone, MAT.stone, MAT.stone,
+                new THREE.MeshBasicMaterial({ map: createLaptopScreenTexture() }),
+                MAT.stone
+            ]
+        );
+        laptopScreen.position.set(0.35, 0.9, -0.32);
+        laptopScreen.rotation.x = -0.18;
+        laptopScreen.userData = { propType: 'laptop' };
+        taxDeskGroup.add(laptopScreen);
+        interactiveProps.push(laptopScreen);
+
+        // Ly sứ trắng in chữ THUẾ & Chậu cây xanh tài lộc
+        const mugMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.18, 0.16, 0.38, 14),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+        );
+        mugMesh.position.set(1.45, 0.54, 0.25);
+        mugMesh.userData = { propType: 'laptop' };
+        taxDeskGroup.add(mugMesh);
+
+        const potMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.42, 12), new THREE.MeshStandardMaterial({ color: 0xfef3c7 }));
+        potMesh.position.set(1.5, 0.56, -0.35);
+        taxDeskGroup.add(potMesh);
+        const plantCrown = new THREE.Mesh(new THREE.DodecahedronGeometry(0.38, 1), MAT.grass);
+        plantCrown.position.set(1.5, 1.0, -0.35);
+        taxDeskGroup.add(plantCrown);
+
+        // B. Góc Phải Tiền Đường (X = 4.8, Z = -6.8): Cặp Tạ Hồng & Bình Nước Hồng "GYM 🤍"
+        const gymCornerGroup = new THREE.Group();
+        gymCornerGroup.position.set(4.8, 0.55, 6.2);
+        hallGroup.add(gymCornerGroup);
+
+        // Bình nước hồng GYM
+        const bottleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.05, 16), MAT.pinkGym);
+        bottleBody.position.set(0.55, 0.525, 0);
+        bottleBody.castShadow = true;
+        bottleBody.userData = { propType: 'gym' };
+        gymCornerGroup.add(bottleBody);
+        interactiveProps.push(bottleBody);
+
+        const bottleCap = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.22, 14), new THREE.MeshStandardMaterial({ color: 0xfbcfe8 }));
+        bottleCap.position.set(0.55, 1.12, 0);
+        gymCornerGroup.add(bottleCap);
+
+        // Cặp tạ tay màu hồng (2 chiếc)
+        function createPinkDumbbell() {
+            const db = new THREE.Group();
+            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.65, 10), MAT.pinkGym);
+            bar.rotation.z = Math.PI / 2;
+            db.add(bar);
+            [-0.28, 0.28].forEach(dx => {
+                const w = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.18, 12), MAT.pinkGym);
+                w.rotation.z = Math.PI / 2;
+                w.position.x = dx;
+                db.add(w);
+            });
+            return db;
+        }
+        const db1 = createPinkDumbbell();
+        db1.position.set(-0.25, 0.22, 0.15);
+        db1.rotation.y = 0.35;
+        gymCornerGroup.add(db1);
+
+        const db2 = createPinkDumbbell();
+        db2.position.set(-0.1, 0.42, -0.15);
+        db2.rotation.y = -0.4;
+        gymCornerGroup.add(db2);
+
+        // 4. CÂY BỒ ĐỀ CỔ THỤ TREO DẢI LỤA ĐỎ (X = -13, Z = 4)
+        const bodhiGroup = new THREE.Group();
+        bodhiGroup.position.set(-13, 0, 4);
+        scene.add(bodhiGroup);
+        addCollider(-13, 4, 1.8);
+
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 1.35, 5.5, 12), MAT.woodDark);
+        trunk.position.y = 2.75;
+        trunk.castShadow = true;
+        bodhiGroup.add(trunk);
+
+        const foliagePositions = [
+            [0, 6.5, 0, 3.6], [-2.2, 5.6, 1.2, 2.6], [2.2, 5.8, -1.0, 2.7],
+            [-1.5, 7.2, -1.6, 2.5], [1.8, 7.0, 1.5, 2.5]
+        ];
+        foliagePositions.forEach(([fx, fy, fz, fr]) => {
+            const leaf = new THREE.Mesh(new THREE.DodecahedronGeometry(fr, 1), MAT.grass);
+            leaf.position.set(fx, fy, fz);
+            leaf.castShadow = true;
+            bodhiGroup.add(leaf);
+        });
+
+        const ribbonsGroup = new THREE.Group();
+        bodhiGroup.add(ribbonsGroup);
+        function addRedRibbonToTree() {
+            const rib = new THREE.Mesh(
+                new THREE.BoxGeometry(0.14, 0.95, 0.03),
+                new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x450a0a })
+            );
+            const angle = Math.random() * Math.PI * 2;
+            const rad = 1.6 + Math.random() * 1.8;
+            rib.position.set(Math.cos(angle) * rad, 3.8 + Math.random() * 1.4, Math.sin(angle) * rad);
+            ribbonsGroup.add(rib);
+        }
+        for (let i = 0; i < 18; i++) addRedRibbonToTree();
+
+        // 5. HỒ SEN & ĐÈN HOA ĐĂNG (X = -13, Z = 13)
+        const pondGroup = new THREE.Group();
+        pondGroup.position.set(-13, 0, 13);
+        scene.add(pondGroup);
+        addCollider(-13, 13, 3.8);
+
+        const pondRim = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.4, 0.45, 24), MAT.stone);
+        pondRim.position.y = 0.22;
+        pondGroup.add(pondRim);
+
+        const pondWater = new THREE.Mesh(
+            new THREE.CylinderGeometry(3.95, 3.95, 0.35, 24),
+            new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.15, metalness: 0.3 })
+        );
+        pondWater.position.y = 0.24;
+        pondGroup.add(pondWater);
+
+        const lanternsGroup = new THREE.Group();
+        pondGroup.add(lanternsGroup);
+        function spawnLotusLantern() {
+            const l = new THREE.Group();
+            const r = Math.random() * 3.1;
+            const a = Math.random() * Math.PI * 2;
+            l.position.set(Math.cos(a) * r, 0.44, Math.sin(a) * r);
+            const petal = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.18, 7), MAT.pinkGym);
+            petal.rotation.x = Math.PI;
+            l.add(petal);
+            const core = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+            core.position.y = 0.08;
+            l.add(core);
+            lanternsGroup.add(l);
+        }
+        for (let i = 0; i < 12; i++) spawnLotusLantern();
+
+        // 6. GÁC CHUÔNG ĐẠI HỒNG CHUNG & BÀN XIN QUẺ (X = 13, Z = 6)
+        const bellTowerGroup = new THREE.Group();
+        bellTowerGroup.position.set(13, 0, 6);
+        scene.add(bellTowerGroup);
+        addCollider(13, 6, 2.4);
+
+        const towerBase = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.8, 5.2), MAT.stone);
+        towerBase.position.y = 0.4;
+        bellTowerGroup.add(towerBase);
+
+        [-2.0, 2.0].forEach(bx => {
+            [-2.0, 2.0].forEach(bz => {
+                const p = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 4.4, 10), MAT.woodRed);
+                p.position.set(bx, 2.8, bz);
+                bellTowerGroup.add(p);
+            });
+        });
+
+        const towerRoof = new THREE.Mesh(new THREE.ConeGeometry(4.5, 2.0, 4), MAT.roofTile);
+        towerRoof.rotation.y = Math.PI / 4;
+        towerRoof.position.y = 5.8;
+        bellTowerGroup.add(towerRoof);
+
+        const greatBellMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.92, 1.75, 18), MAT.bronze);
+        greatBellMesh.position.y = 3.2;
+        greatBellMesh.castShadow = true;
+        bellTowerGroup.add(greatBellMesh);
+
+        // Bàn Xin Quẻ Đầu Năm cạnh Gác Chuông (X = 11.5, Z = 12.5)
+        const fortuneTableGroup = new THREE.Group();
+        fortuneTableGroup.position.set(11.5, 0, 12.5);
+        scene.add(fortuneTableGroup);
+        addCollider(11.5, 12.5, 1.1);
+        const fTable = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.9, 1.2), MAT.woodRed);
+        fTable.position.y = 0.45;
+        fortuneTableGroup.add(fTable);
+        const xamTube = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.48, 12), MAT.gold);
+        xamTube.position.y = 1.14;
+        fortuneTableGroup.add(xamTube);
+
+        /* ============================================================================
+         * PHẦN 6: HÀM TẠO MÔ HÌNH NHÂN VẬT 3D "CÁN BỘ THUẾ" CHUẨN THEO TRANH
+         * ============================================================================ */
+        function createTaxOfficerCharacter(style = 'tax_female') {
+            const root = new THREE.Group();
+
+            const isAoLam = style === 'ao_lam';
+            const isFemale = style === 'tax_female' || style === 'ao_lam';
+            const isSenior = style === 'tax_senior';
+
+            const uniformMat = isAoLam ? MAT.aoLamBackMat : MAT.taxNavy;
+            const torsoBackMat = isAoLam ? MAT.aoLamBackMat : MAT.taxBackMat;
+
+            // Chân trái & phải
+            const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.14, 0.65, 10), uniformMat);
+            leftLeg.position.set(-0.18, 0.32, 0);
+            root.add(leftLeg);
+
+            const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.14, 0.65, 10), uniformMat);
+            rightLeg.position.set(0.18, 0.32, 0);
+            root.add(rightLeg);
+
+            // Đôi chân xếp bằng khi ngồi thiền trên bồ đoàn
+            const sittingLegs = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.58, 0.32, 16), uniformMat);
+            sittingLegs.position.set(0, 0.2, 0);
+            sittingLegs.visible = false;
+            root.add(sittingLegs);
+
+            // Thân áo (Hộp bo góc có mặt lưng in rõ Logo + chữ "THUẾ" màu vàng!)
+            // Thứ tự mặt BoxGeometry: [+x, -x, +y, -y, +z (lưng nhìn từ camera sau), -z (ngực hướng về phía Phật)]
+            const torsoMaterials = [
+                uniformMat, uniformMat, uniformMat, uniformMat,
+                torsoBackMat, // Mặt +Z hướng về phía camera sau lưng hiển thị rõ Logo & chữ "THUẾ"
+                uniformMat
+            ];
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.92, 0.46), torsoMaterials);
+            torso.position.y = 1.05;
+            torso.castShadow = true;
+            root.add(torso);
+
+            // Cầu vai vàng (Epaulets) & Tiết cổ áo vàng chuẩn đồng phục Thuế
+            if (!isAoLam) {
+                [-0.31, 0.31].forEach(ex => {
+                    const epaulet = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.26), MAT.gold);
+                    epaulet.position.set(ex, 1.52, 0);
+                    root.add(epaulet);
+                });
+                // Cổ sơ mi trắng & Cà vạt phía trước (-Z)
+                const shirtCollar = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.21, 0.23, 0.14, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xffffff })
+                );
+                shirtCollar.position.set(0, 1.53, 0);
+                root.add(shirtCollar);
+            }
+
+            // Hai cánh tay chắp trước ngực hoặc vung khi bước đi
+            const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.68, 10), uniformMat);
+            leftArm.position.set(-0.46, 1.08, -0.08);
+            root.add(leftArm);
+
+            const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.11, 0.68, 10), uniformMat);
+            rightArm.position.set(0.46, 1.08, -0.08);
+            root.add(rightArm);
+
+            // Đôi bàn tay chắp lễ trước ngực
+            const prayingHands = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), MAT.skin);
+            prayingHands.scale.set(0.8, 1.2, 1.1);
+            prayingHands.position.set(0, 1.12, -0.34);
+            root.add(prayingHands);
+
+            // Đầu & Khuôn mặt nhân vật
+            const headGroup = new THREE.Group();
+            headGroup.position.y = 1.88;
+            root.add(headGroup);
+
+            const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 20), MAT.skin);
+            headMesh.castShadow = true;
+            headGroup.add(headMesh);
+
+            // Mắt nhắm nhẹ bình tâm & Má hồng
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+            [-0.14, 0.14].forEach(ex => {
+                const eye = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.025, 0.03), eyeMat);
+                eye.position.set(ex, 0.04, -0.39);
+                headGroup.add(eye);
+
+                const blush = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.055, 8, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xfda4af })
+                );
+                blush.position.set(ex * 1.45, -0.05, -0.37);
+                headGroup.add(blush);
+            });
+
+            // Mái tóc theo phong cách trong tranh
+            const hairMat = isSenior ? MAT.hairSilver : MAT.hairDark;
+            const hairCap = new THREE.Mesh(
+                new THREE.SphereGeometry(0.445, 20, 20, 0, Math.PI * 2, 0, Math.PI * 0.62),
+                hairMat
+            );
+            hairCap.rotation.x = -0.15;
+            headGroup.add(hairCap);
+
+            if (isFemale) {
+                // Búi tóc tròn phía sau + Dây buộc tóc nâu cam đúng như nữ cán bộ Thuế trong tranh
+                const bun = new THREE.Mesh(new THREE.SphereGeometry(0.21, 14, 14), hairMat);
+                bun.position.set(0, -0.02, 0.42);
+                headGroup.add(bun);
+
+                const ribbonRing = new THREE.Mesh(
+                    new THREE.TorusGeometry(0.14, 0.04, 8, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xd97706 })
+                );
+                ribbonRing.position.set(0, -0.02, 0.34);
+                headGroup.add(ribbonRing);
+            }
+
+            // Luồng hơi thở bình tâm nhẹ nhàng ("💨") bên má khi ngồi thiền
+            const breathPuff = new THREE.Mesh(
+                new THREE.SphereGeometry(0.08, 10, 10),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.75 })
+            );
+            breathPuff.position.set(-0.32, -0.08, -0.35);
+            headGroup.add(breathPuff);
+
+            root.userData = {
+                leftLeg, rightLeg, sittingLegs, torso, leftArm, rightArm, prayingHands, headGroup, breathPuff,
+                isMeditating: false
+            };
+
+            return root;
+        }
+
+        // Khởi tạo Nhân vật Người Chơi
+        let playerGroup = createTaxOfficerCharacter(userState.style);
+        playerGroup.position.set(0, 0, 11);
+        scene.add(playerGroup);
+
+        function rebuildPlayerCharacter(newStyle) {
+            userState.style = newStyle;
+            saveUserData();
+            const oldPos = playerGroup.position.clone();
+            const oldRot = playerGroup.rotation.y;
+            const wasMed = playerGroup.userData.isMeditating;
+            scene.remove(playerGroup);
+            playerGroup = createTaxOfficerCharacter(newStyle);
+            playerGroup.position.copy(oldPos);
+            playerGroup.rotation.y = oldRot;
+            setMeditationPose(playerGroup, wasMed);
+            scene.add(playerGroup);
+        }
+
+        function setMeditationPose(charGroup, meditate) {
+            const ud = charGroup.userData;
+            ud.isMeditating = meditate;
+            ud.leftLeg.visible = !meditate;
+            ud.rightLeg.visible = !meditate;
+            ud.sittingLegs.visible = meditate;
+            ud.torso.position.y = meditate ? 0.68 : 1.05;
+            ud.headGroup.position.y = meditate ? 1.50 : 1.88;
+            ud.leftArm.position.y = meditate ? 0.72 : 1.08;
+            ud.rightArm.position.y = meditate ? 0.72 : 1.08;
+            ud.prayingHands.position.y = meditate ? 0.76 : 1.12;
+            // Khi ngồi thiền chắp tay trước ngực
+            ud.leftArm.rotation.x = meditate ? 0.45 : 0;
+            ud.rightArm.rotation.x = meditate ? 0.45 : 0;
+            ud.leftArm.rotation.z = meditate ? -0.35 : 0;
+            ud.rightArm.rotation.z = meditate ? 0.35 : 0;
+        }
+
+        /* ============================================================================
+         * PHẦN 7: ĐỘI NGŨ 24 CÁN BỘ THUẾ AI NGỒI THIỀN TRONG CHÁNH ĐIỆN & BONG BÓNG "🔥 HOT"
+         * ============================================================================ */
+        const aiOfficers = [];
+        const seatCoords = [
+            // Hàng 1 gần bàn Phật
+            [-6.5, -15.5], [-3.8, -15.5], [-1.3, -15.5], [1.3, -15.5], [3.8, -15.5], [6.5, -15.5],
+            // Hàng 2 giữa Chánh Điện
+            [-7.2, -12.5], [-4.4, -12.5], [-1.8, -12.5], [1.8, -12.5], [4.4, -12.5], [7.2, -12.5],
+            // Hàng 3
+            [-6.8, -9.6],  [-3.8, -9.6],  [-1.3, -9.6],  [1.3, -9.6],  [3.8, -9.6],  [6.8, -9.6],
+            // Hàng 4 Tiền đường (cạnh chồng sách Luật & bình nước Gym như trong tranh!)
+            [-2.2, -6.8],  [2.2, -6.8]
+        ];
+
+        const stylesPool = ['tax_female', 'tax_male', 'tax_female', 'tax_senior', 'tax_male'];
+        seatCoords.forEach(([sx, sz], idx) => {
+            // Tấm đệm bồ đoàn tròn dưới sàn gỗ
+            const cushion = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.68, 0.72, 0.12, 16),
+                new THREE.MeshStandardMaterial({ color: idx % 2 === 0 ? 0x78716c : 0xa8a29e, roughness: 0.8 })
+            );
+            cushion.position.set(sx, 0.61, sz);
+            scene.add(cushion);
+
+            const st = stylesPool[idx % stylesPool.length];
+            const npc = createTaxOfficerCharacter(st);
+            npc.position.set(sx, 0.62, sz);
+            setMeditationPose(npc, true);
+            scene.add(npc);
+            aiOfficers.push({
+                mesh: npc,
+                phase: Math.random() * Math.PI * 2,
+                topicIndex: idx % TAX_HOT_TOPICS.length
+            });
+        });
+
+        // Thêm 8 Cán bộ & Phật tử đi dạo quanh sân chùa
+        const walkers = [];
+        for (let i = 0; i < 8; i++) {
+            const st = i % 3 === 0 ? 'ao_lam' : (i % 2 === 0 ? 'tax_female' : 'tax_male');
+            const wMesh = createTaxOfficerCharacter(st);
+            const wx = (Math.random() - 0.5) * 20;
+            const wz = 4 + Math.random() * 14;
+            wMesh.position.set(wx, 0, wz);
+            scene.add(wMesh);
+            walkers.push({
+                mesh: wMesh,
+                targetX: (Math.random() - 0.5) * 20,
+                targetZ: 2 + Math.random() * 16,
+                speed: 1.5 + Math.random() * 0.8,
+                phase: Math.random() * 10
+            });
+        }
+
+        // Hệ thống Bong bóng chữ "🔥 HOT" nổi trên đầu các Cán bộ Thuế AI
+        const bubblesContainer = document.getElementById('bubbles-container');
+        const activeBubbles = [];
+        for (let i = 0; i < 6; i++) {
+            const el = document.createElement('div');
+            el.className = 'ai-bubble';
+            bubblesContainer.appendChild(el);
+            activeBubbles.push({
+                el,
+                npcIndex: (i * 3) % aiOfficers.length,
+                timer: i * 1.2
+            });
+        }
+
+        function refreshBubbleContent(bObj) {
+            const topic = TAX_HOT_TOPICS[Math.floor(Math.random() * TAX_HOT_TOPICS.length)];
+            bObj.el.innerHTML = (topic.hot ? `<span class="hot-badge">🔥 HOT</span>` : '') +
+                `<span>${topic.icon} ${topic.text}</span>`;
+        }
+        activeBubbles.forEach(b => refreshBubbleContent(b));
+
+        /* ============================================================================
+         * PHẦN 8: ĐIỀU KHIỂN DI CHUYỂN, XOAY CAMERA 360°, ZOOM & CHẠM VẬT PHẨM
+         * ============================================================================ */
+        let playerPos = { x: 0, z: 11 };
+        let playerTargetPos = null;
+        const playerSpeed = 5.4;
+        let isMoving = false;
+
+        let camYaw = 0;
+        let camDist = 8.2;
+        let camPitch = 0.48;
+        let isDraggingCam = false;
+        let dragStartX = 0, dragStartY = 0;
+        let pointerMovedDist = 0;
+
+        // Vòng hoa sen vàng chỉ điểm đến khi Click mặt sân
+        const targetRing = new THREE.Mesh(
+            new THREE.RingGeometry(0.32, 0.5, 24),
+            new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide })
+        );
+        targetRing.rotation.x = -Math.PI / 2;
+        targetRing.position.y = 0.04;
+        targetRing.visible = false;
+        scene.add(targetRing);
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const clickPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(120, 120),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        clickPlane.rotation.x = -Math.PI / 2;
+        scene.add(clickPlane);
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            isDraggingCam = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            pointerMovedDist = 0;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDraggingCam) return;
+            const dx = e.clientX - dragStartX;
+            const dy = e.clientY - dragStartY;
+            pointerMovedDist += Math.abs(dx) + Math.abs(dy);
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+
+            camYaw -= dx * 0.0065;
+            camPitch = Math.max(0.22, Math.min(1.05, camPitch + dy * 0.0045));
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!isDraggingCam) return;
+            isDraggingCam = false;
+            if (e.target !== renderer.domElement || pointerMovedDist > 12) return;
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            // Kiểm tra có click trúng Chồng sách Luật, Laptop ETAX hay Bình nước GYM không
+            const propHits = raycaster.intersectObjects(interactiveProps, true);
+            if (propHits.length > 0) {
+                const pType = propHits[0].object.userData.propType;
+                audio.playChimeSuccess();
+                if (pType === 'books') {
+                    showToast('📚 Chồng sách nghiệp vụ: Luật QLT, NĐ 252/2026, TT 89/2026 — Nắm vững chuyên môn!');
+                } else if (pType === 'laptop') {
+                    showToast('💻 Hệ thống ETAX • PNN • LPTB-TMS • HĐĐT-MTT: Tất cả đều xanh mượt!');
+                } else if (pType === 'gym') {
+                    showToast('🏋️‍♀️ Cặp tạ hồng & Bình nước GYM: Giữ sức khỏe dẻo dai để chạy mọi deadline!');
+                }
+                document.getElementById('modal-prayer-cloud').style.display = 'flex';
+                return;
+            }
+
+            // Nếu click mặt sân / sàn Chánh Điện thì di chuyển tới đó
+            const groundHits = raycaster.intersectObject(clickPlane);
+            if (groundHits.length > 0) {
+                const pt = groundHits[0].point;
+                if (playerGroup.userData.isMeditating) {
+                    setMeditationPose(playerGroup, false);
+                }
+                playerTargetPos = { x: pt.x, z: pt.z };
+                isMoving = true;
+                targetRing.position.set(pt.x, pt.z < -3.5 ? 0.58 : 0.04, pt.z);
+                targetRing.visible = true;
+            }
+        });
+
+        window.addEventListener('wheel', (e) => {
+            camDist = Math.max(4.0, Math.min(16.0, camDist + e.deltaY * 0.005));
+        }, { passive: true });
+
+        // Bàn phím WASD / Mũi tên & Cần điều khiển ảo (Virtual Joystick)
+        const keys = { w: false, a: false, s: false, d: false };
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || k === 'arrowup') keys.w = true;
+            if (k === 'a' || k === 'arrowleft') keys.a = true;
+            if (k === 's' || k === 'arrowdown') keys.s = true;
+            if (k === 'd' || k === 'arrowright') keys.d = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || k === 'arrowup') keys.w = false;
+            if (k === 'a' || k === 'arrowleft') keys.a = false;
+            if (k === 's' || k === 'arrowdown') keys.s = false;
+            if (k === 'd' || k === 'arrowright') keys.d = false;
+        });
+
+        // Joystick cảm ứng
+        const joyZone = document.getElementById('joystick-zone');
+        const joyKnob = document.getElementById('joystick-knob');
+        let joyVec = { x: 0, y: 0 };
+        let joyActive = false;
+
+        joyZone.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            joyActive = true;
+            updateJoystick(e);
+        });
+        window.addEventListener('pointermove', (e) => {
+            if (joyActive) updateJoystick(e);
+        });
+        window.addEventListener('pointerup', () => {
+            if (joyActive) {
+                joyActive = false;
+                joyVec = { x: 0, y: 0 };
+                joyKnob.style.transform = `translate(0px, 0px)`;
+            }
+        });
+
+        function updateJoystick(e) {
+            const rect = joyZone.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const maxR = rect.width / 2 - 16;
+            let dx = e.clientX - cx;
+            let dy = e.clientY - cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > maxR) {
+                dx = (dx / dist) * maxR;
+                dy = (dy / dist) * maxR;
+            }
+            joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            joyVec.x = dx / maxR;
+            joyVec.y = dy / maxR;
+        }
+
+        /* ============================================================================
+         * PHẦN 9: XỬ LÝ 5 HOẠT ĐỘNG TƯƠNG TÁC & SỰ KIỆN GIAO DIỆN
+         * ============================================================================ */
+        function hideAllModals() {
+            ['modal-tutorial', 'modal-prayer-cloud', 'modal-incense', 'modal-bell', 'modal-woodenfish', 'modal-wish', 'modal-fortune', 'modal-notebook', 'modal-share'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            stopBellMinigame();
+            stopMoMinigame();
+        }
+
+        document.querySelectorAll('.btn-close-modal').forEach(btn => {
+            btn.addEventListener('click', hideAllModals);
+        });
+
+        // Vào Chùa từ màn hình chào
+        document.getElementById('input-player-name').value = userState.name;
+        document.getElementById('select-player-style').value = userState.style;
+
+        document.getElementById('btn-enter-temple').addEventListener('click', () => {
+            const nameVal = document.getElementById('input-player-name').value.trim();
+            if (nameVal) userState.name = nameVal;
+            const chosenStyle = document.getElementById('select-player-style').value;
+            rebuildPlayerCharacter(chosenStyle);
+            updateOutfitButtonLabel();
+            saveUserData();
+
+            audio.init();
+            document.getElementById('modal-welcome').style.display = 'none';
+            document.getElementById('hud-layer').classList.remove('hidden');
+
+            if (!userState.tutorialDone) {
+                document.getElementById('modal-prayer-cloud').style.display = 'flex';
+                userState.tutorialDone = true;
+                saveUserData();
+            }
+            showToast(`A Di Đà Phật! Chào mừng ${userState.name} bước vào Khóa Tu Bình Tâm 2026!`);
+        });
+
+        // Đổi trang phục trực tiếp trên HUD
+        const styleCycle = ['tax_female', 'tax_male', 'tax_senior', 'ao_lam'];
+        const styleNames = {
+            tax_female: '👔 Đồng Phục: Nữ Thuế',
+            tax_male: '👔 Đồng Phục: Nam Thuế',
+            tax_senior: '👔 Đồng Phục: Lão Thành',
+            ao_lam: '🪷 Trang Phục: Áo Lam'
+        };
+        function updateOutfitButtonLabel() {
+            document.getElementById('btn-outfit-switch').innerText = styleNames[userState.style] || '👔 Đồng Phục Thuế';
+        }
+        updateOutfitButtonLabel();
+
+        document.getElementById('btn-outfit-switch').addEventListener('click', () => {
+            const nextIdx = (styleCycle.indexOf(userState.style) + 1) % styleCycle.length;
+            rebuildPlayerCharacter(styleCycle[nextIdx]);
+            updateOutfitButtonLabel();
+            audio.playChimeSuccess();
+            showToast(`Đã đổi sang ${styleNames[userState.style]}`);
+        });
+
+        // Nút Ngồi Thiền Bình Tâm giữa Chánh Điện
+        document.getElementById('btn-meditate-toggle').addEventListener('click', () => {
+            const willMeditate = !playerGroup.userData.isMeditating;
+            if (willMeditate) {
+                isMoving = false;
+                playerTargetPos = null;
+                targetRing.visible = false;
+                // Đưa nhân vật vào vị trí trung tâm hàng đầu trong Chánh Điện trước Đức Phật
+                playerPos.x = 0;
+                playerPos.z = -9.5;
+                playerGroup.position.set(0, 0.56, -9.5);
+                playerGroup.rotation.y = 0;
+                setMeditationPose(playerGroup, true);
+                audio.playSingingBowl(0.35);
+                showToast('🧘 Đang ngồi thiền Bình Tâm trước Chánh Điện... Hít vào tâm tĩnh lặng, thở ra ETAX mượt mà!');
+            } else {
+                setMeditationPose(playerGroup, false);
+                showToast('Đã đứng dậy tiếp tục dạo cảnh Chùa Bác Ái.');
+            }
+        });
+
+        // Đổi chế độ ánh sáng (Hoàng Hôn Ấm / Ban Ngày Sáng / Đêm Hoa Đăng)
+        let lightingMode = 0;
+        document.getElementById('btn-lighting-mode').addEventListener('click', () => {
+            lightingMode = (lightingMode + 1) % 3;
+            const btn = document.getElementById('btn-lighting-mode');
+            if (lightingMode === 0) {
+                scene.background.setHex(0xfdba74);
+                scene.fog.color.setHex(0xfed7aa);
+                dirLight.intensity = 2.2;
+                btn.innerText = '🌤️ Hoàng Hôn Ấm';
+            } else if (lightingMode === 1) {
+                scene.background.setHex(0x7dd3fc);
+                scene.fog.color.setHex(0xe0f2fe);
+                dirLight.intensity = 2.6;
+                btn.innerText = '☀️ Nắng Sớm Sáng';
+            } else {
+                scene.background.setHex(0x0f172a);
+                scene.fog.color.setHex(0x1e1b4b);
+                dirLight.intensity = 0.55;
+                btn.innerText = '🏮 Đêm Hoa Đăng';
+            }
+        });
+
+        document.getElementById('btn-audio-toggle').addEventListener('click', () => {
+            const muted = audio.toggleMute();
+            document.getElementById('btn-audio-toggle').innerText = muted ? '🔇' : '🔊';
+            showToast(muted ? 'Đã tắt âm thanh' : 'Đã bật tiếng mõ tụng kinh & chuông chùa');
+        });
+
+        document.getElementById('btn-prayer-cloud-open').addEventListener('click', () => {
+            hideAllModals();
+            document.getElementById('modal-prayer-cloud').style.display = 'flex';
+        });
+
+        document.getElementById('btn-pray-9-wishes').addEventListener('click', () => {
+            hideAllModals();
+            userState.incenseCount += 3;
+            saveUserData();
+            spawnIncenseStick((Math.random() - 0.5) * 0.5, (Math.random() - 0.5) * 0.4);
+            audio.playChimeSuccess();
+            showToast('🙏 Đã dâng 3 nén tâm hương khấn trọn 9 điều Bình Tâm Cán Bộ Thuế 2026!');
+        });
+
+        document.getElementById('btn-help-open').addEventListener('click', () => {
+            hideAllModals();
+            document.getElementById('modal-tutorial').style.display = 'flex';
+        });
+
+        // Mở hoạt động từ thanh chọn nhanh hoặc nút tương tác gần
+        function openActivityModal(actName) {
+            hideAllModals();
+            if (actName === 'incense') {
+                document.getElementById('modal-incense').style.display = 'flex';
+            } else if (actName === 'woodenfish') {
+                startMoMinigame();
+            } else if (actName === 'bell') {
+                startBellMinigame();
+            } else if (actName === 'wish') {
+                document.getElementById('modal-wish').style.display = 'flex';
+            } else if (actName === 'fortune') {
+                document.getElementById('modal-fortune').style.display = 'flex';
+            }
+        }
+
+        document.querySelectorAll('.btn-quick-act').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openActivityModal(btn.getAttribute('data-quick-act'));
+            });
+        });
+
+        document.getElementById('btn-trigger-activity').addEventListener('click', () => {
+            if (window.currentActivity) openActivityModal(window.currentActivity);
+        });
+
+        // HOẠT ĐỘNG 1: DÂNG HƯƠNG
+        document.querySelectorAll('.btn-incense-pick').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const n = parseInt(btn.getAttribute('data-sticks'));
+                userState.incenseCount += n;
+                saveUserData();
+                for (let i = 0; i < n; i++) {
+                    spawnIncenseStick((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.4);
+                }
+                audio.playChimeSuccess();
+                hideAllModals();
+                showToast(`🪔 Đã thành tâm dâng ${n} nén hương lên Lư Đồng Chùa Bác Ái!`);
+            });
+        });
+
+        // HOẠT ĐỘNG 2: THỈNH CHUÔNG ĐẠI HỒNG CHUNG (3 NHỊP)
+        let bellAnimId = null;
+        let bellRadius = 170;
+        let bellRound = 1;
+
+        function startBellMinigame() {
+            document.getElementById('modal-bell').style.display = 'flex';
+            bellRound = 1;
+            bellRadius = 170;
+            document.getElementById('bell-round-text').innerText = `${bellRound}/3`;
+            document.getElementById('bell-feedback').innerText = 'Canh lúc vòng xanh thu sát vòng vàng...';
+            const ringEl = document.getElementById('bell-shrinking-ring');
+
+            function stepBell() {
+                bellRadius -= 1.5;
+                if (bellRadius < 52) bellRadius = 170;
+                ringEl.style.width = `${bellRadius}px`;
+                ringEl.style.height = `${bellRadius}px`;
+                bellAnimId = requestAnimationFrame(stepBell);
+            }
+            if (bellAnimId) cancelAnimationFrame(bellAnimId);
+            bellAnimId = requestAnimationFrame(stepBell);
+        }
+
+        function stopBellMinigame() {
+            if (bellAnimId) {
+                cancelAnimationFrame(bellAnimId);
+                bellAnimId = null;
+            }
+        }
+
+        document.getElementById('btn-strike-bell').addEventListener('click', () => {
+            const diff = Math.abs(bellRadius - 82);
+            const fb = document.getElementById('bell-feedback');
+            audio.playBell(0.8);
+            document.body.classList.remove('shake-anim');
+            void document.body.offsetWidth;
+            document.body.classList.add('shake-anim');
+
+            if (diff < 24) {
+                fb.innerText = '✨ Chuông ngân vang rền! Tâm trí sáng suốt!';
+                userState.bestTamAn = Math.min(100, Math.max(userState.bestTamAn, 95));
+            } else {
+                fb.innerText = '🔔 Tiếng chuông ấm áp lan tỏa khắp sân chùa.';
+            }
+            saveUserData();
+
+            if (bellRound < 3) {
+                bellRound++;
+                bellRadius = 170;
+                document.getElementById('bell-round-text').innerText = `${bellRound}/3`;
+            } else {
+                setTimeout(() => {
+                    hideAllModals();
+                    showToast('🔔 Đã hoàn thành 3 hồi chuông Đại Hồng Chung cầu quốc thái dân an!');
+                }, 900);
+            }
+        });
+
+        // HOẠT ĐỘNG 3: GÕ MÕ HÓA GIẢI DEADLINE (30 GIÂY)
+        let moTimerInterval = null;
+        let moRingAnimId = null;
+        let moRingSize = 180;
+        let moCurrentScore = 80;
+        let moTimeLeft = 30;
+
+        const stressClearedMessages = [
+            '✨ Tĩnh tâm! Đã hóa giải: KPI dí sát nút!',
+            '✨ Thông suốt! HĐĐT - MTT (Captcha) mượt mà!',
+            '✨ Chuẩn chỉnh! Đối soát LPTB - TMS khớp 100%!',
+            '✨ Bình tâm! Đóng kỳ 03 - 06 đúng hạn!',
+            '✨ Nhẹ nhàng! Giải quyết phản ánh NNT êm đẹp!',
+            '✨ Khỏe khoắn! Hoàn thành báo cáo, kịp giờ đi GYM!'
+        ];
+
+        function startMoMinigame() {
+            document.getElementById('modal-woodenfish').style.display = 'flex';
+            document.getElementById('mo-result-box').classList.add('hidden');
+            moTimeLeft = 30;
+            moCurrentScore = 82;
+            moRingSize = 180;
+            document.getElementById('mo-timer').innerText = moTimeLeft;
+            document.getElementById('mo-score').innerText = moCurrentScore;
+            document.getElementById('mo-judgment').innerText = 'Chạm vào Mõ Gỗ theo nhịp...';
+
+            const ringEl = document.getElementById('mo-approach-ring');
+            function stepMoRing() {
+                moRingSize -= 1.65;
+                if (moRingSize < 68) moRingSize = 180;
+                ringEl.style.width = `${moRingSize}px`;
+                ringEl.style.height = `${moRingSize}px`;
+                moRingAnimId = requestAnimationFrame(stepMoRing);
+            }
+            if (moRingAnimId) cancelAnimationFrame(moRingAnimId);
+            moRingAnimId = requestAnimationFrame(stepMoRing);
+
+            if (moTimerInterval) clearInterval(moTimerInterval);
+            moTimerInterval = setInterval(() => {
+                moTimeLeft--;
+                document.getElementById('mo-timer').innerText = moTimeLeft;
+                if (moTimeLeft <= 0) finishMoMinigame();
+            }, 1000);
+        }
+
+        function stopMoMinigame() {
+            if (moTimerInterval) { clearInterval(moTimerInterval); moTimerInterval = null; }
+            if (moRingAnimId) { cancelAnimationFrame(moRingAnimId); moRingAnimId = null; }
+        }
+
+        function finishMoMinigame() {
+            stopMoMinigame();
+            userState.bestTamAn = Math.max(userState.bestTamAn, moCurrentScore);
+            saveUserData();
+            audio.playChimeSuccess();
+            document.getElementById('mo-result-box').classList.remove('hidden');
+            document.getElementById('mo-final-score').innerText = moCurrentScore;
+            document.getElementById('mo-praise-text').innerText =
+                '“Tâm bất biến giữa dòng KPI & báo cáo — Chúc bạn luôn bình tâm, thông suốt và khỏe mạnh!”';
+        }
+
+        document.getElementById('mo-play-area').addEventListener('click', () => {
+            const diff = Math.abs(moRingSize - 98);
+            const targetCircle = document.getElementById('mo-target-circle');
+            targetCircle.style.transform = 'scale(0.9)';
+            setTimeout(() => { targetCircle.style.transform = 'scale(1)'; }, 90);
+
+            if (diff < 32) {
+                audio.playWoodenFish(true, 0.55);
+                moCurrentScore = Math.min(100, moCurrentScore + 3);
+                const msg = stressClearedMessages[Math.floor(Math.random() * stressClearedMessages.length)];
+                document.getElementById('mo-judgment').innerText = msg;
+            } else {
+                audio.playWoodenFish(false, 0.4);
+                moCurrentScore = Math.min(100, moCurrentScore + 1);
+                document.getElementById('mo-judgment').innerText = '🪵 Cốc... Giữ hơi thở đều đặn...';
+            }
+            document.getElementById('mo-score').innerText = moCurrentScore;
+            moRingSize = 180;
+        });
+
+        document.getElementById('btn-mo-finish-early').addEventListener('click', finishMoMinigame);
+
+        // HOẠT ĐỘNG 4: GỬI LỜI CẦU AN (TREO DẢI LỤA ĐỎ / THẢ ĐÈN HOA ĐĂNG)
+        const wishTextarea = document.getElementById('textarea-wish');
+        const wishCharCount = document.getElementById('wish-char-count');
+        const wishErrorMsg = document.getElementById('wish-error-msg');
+
+        wishTextarea.addEventListener('input', () => {
+            wishCharCount.innerText = `${wishTextarea.value.length}/120`;
+            wishErrorMsg.classList.add('hidden');
+        });
+
+        document.querySelectorAll('.btn-wish-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                wishTextarea.value = btn.innerText;
+                wishCharCount.innerText = `${wishTextarea.value.length}/120`;
+                wishErrorMsg.classList.add('hidden');
+            });
+        });
+
+        function handleWishSubmit(isRibbon) {
+            const txt = wishTextarea.value.trim();
+            if (!txt) {
+                wishErrorMsg.innerText = 'Bạn hãy viết hoặc chọn một lời cầu an nhé!';
+                wishErrorMsg.classList.remove('hidden');
+                return;
+            }
+            if (containsProfanity(txt)) {
+                wishErrorMsg.innerText = 'Xin giữ lời nói trang nghiêm, thanh tịnh nơi cửa Phật.';
+                wishErrorMsg.classList.remove('hidden');
+                return;
+            }
+            userState.wishes.unshift(txt);
+            saveUserData();
+            if (isRibbon) addRedRibbonToTree();
+            else spawnLotusLantern();
+
+            audio.playChimeSuccess();
+            wishTextarea.value = '';
+            hideAllModals();
+            showToast(isRibbon
+                ? '🎀 Đã treo dải lụa đỏ cầu an lên Cây Bồ Đề Cổ Thụ!'
+                : '🪷 Đã thả chiếc đèn hoa đăng nguyện ước xuống mặt Hồ Sen!');
+        }
+
+        document.getElementById('btn-submit-ribbon').addEventListener('click', () => handleWishSubmit(true));
+        document.getElementById('btn-submit-lantern').addEventListener('click', () => handleWishSubmit(false));
+
+        // HOẠT ĐỘNG 5: GIEO QUẺ BÌNH TÂM ĐẦU NĂM
+        let shakeProgress = 0;
+        document.getElementById('btn-shake-fortune').addEventListener('click', () => {
+            const cyl = document.getElementById('fortune-cylinder-visual');
+            const bar = document.getElementById('fortune-shake-bar');
+            cyl.style.transform = 'rotate(-12deg) scale(1.05)';
+            setTimeout(() => { cyl.style.transform = 'rotate(12deg) scale(1.05)'; }, 90);
+            setTimeout(() => { cyl.style.transform = 'rotate(0deg) scale(1)'; }, 180);
+
+            audio.playWoodenFish(true, 0.35);
+            shakeProgress = Math.min(100, shakeProgress + 50);
+            bar.style.width = `${shakeProgress}%`;
+
+            if (shakeProgress >= 100) {
+                setTimeout(() => {
+                    shakeProgress = 0;
+                    bar.style.width = '0%';
+                    const picked = FORTUNE_LIST[Math.floor(Math.random() * FORTUNE_LIST.length)];
+                    userState.fortunes.unshift(picked);
+                    saveUserData();
+                    audio.playChimeSuccess();
+                    document.getElementById('fortune-title').innerText = `✦ ${picked.title} ✦`;
+                    document.getElementById('fortune-poem').innerText = picked.text;
+                    document.getElementById('fortune-result-card').classList.remove('hidden');
+                }, 220);
+            }
+        });
+
+        // SỔ CẦU AN & XUẤT THIỆP 1080×1350
+        document.getElementById('btn-notebook-open').addEventListener('click', () => {
+            hideAllModals();
+            document.getElementById('nb-player-name').innerText = userState.name;
+            document.getElementById('nb-incense-count').innerText = userState.incenseCount;
+            document.getElementById('nb-best-taman').innerText = userState.bestTamAn;
+            document.getElementById('nb-wishes-count').innerText = userState.wishes.length;
+            document.getElementById('nb-fortunes-count').innerText = userState.fortunes.length;
+
+            document.getElementById('nb-wishes-list').innerHTML = userState.wishes.map(w =>
+                `<div class="bg-amber-950/80 p-2.5 rounded-xl border border-amber-700/50">🌸 ${w}</div>`
+            ).join('');
+
+            document.getElementById('nb-fortunes-list').innerHTML = userState.fortunes.map(f =>
+                `<div class="bg-amber-950/80 p-2.5 rounded-xl border border-amber-700/50">🎋 <b>${f.title}:</b> ${f.text}</div>`
+            ).join('');
+
+            document.getElementById('modal-notebook').style.display = 'flex';
+        });
+
+        function renderShareCard1080x1350() {
+            const canvas = document.getElementById('share-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Nền gỗ trầm sang trọng
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, 1350);
+            bgGrad.addColorStop(0, '#3b150a');
+            bgGrad.addColorStop(0.5, '#1e0c06');
+            bgGrad.addColorStop(1, '#0f172a');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, 1080, 1350);
+
+            // Khung viền vàng kép
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(36, 36, 1008, 1278);
+            ctx.lineWidth = 3;
+            ctx.strokeRect(52, 52, 976, 1246);
+
+            // Tiêu đề Khóa Tu
+            ctx.fillStyle = '#991b1b';
+            ctx.fillRect(90, 82, 900, 118);
+            ctx.strokeStyle = '#fde047';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(90, 82, 900, 118);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#fef08a';
+            ctx.font = '800 40px "Be Vietnam Pro", sans-serif';
+            ctx.fillText('KHÓA TU “BÌNH TÂM CÁN BỘ THUẾ 2026”', 540, 136);
+            ctx.fillStyle = '#fed7aa';
+            ctx.font = '600 22px "Be Vietnam Pro", sans-serif';
+            ctx.fillText('Giữ vững chuyên môn – Vượt chông công việc – Hoàn thành KPI – Khỏe để chạy deadline', 540, 178);
+
+            // Chụp trực tiếp cảnh 3D vào giữa thiệp
+            renderer.render(scene, camera);
+            ctx.save();
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(90, 224, 900, 490);
+            ctx.drawImage(renderer.domElement, 90, 224, 900, 490);
+            ctx.restore();
+
+            // Khung thông tin Cán bộ / Phật tử & Điểm Tâm An
+            ctx.fillStyle = '#172554';
+            ctx.fillRect(90, 740, 900, 110);
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(90, 740, 900, 110);
+
+            ctx.fillStyle = '#fef08a';
+            ctx.font = '800 34px "Be Vietnam Pro", sans-serif';
+            ctx.fillText(`★ ${userState.name.toUpperCase()} • TÂM AN: ${userState.bestTamAn}/100 ★`, 540, 792);
+            ctx.fillStyle = '#bfdbfe';
+            ctx.font = '600 24px "Be Vietnam Pro", sans-serif';
+            ctx.fillText(`Đã dâng ${userState.incenseCount} nén tâm hương tại Chùa Bác Ái`, 540, 830);
+
+            // Đám mây lời cầu nguyện ETAX & lời chúc cá nhân
+            ctx.fillStyle = '#fffbeb';
+            ctx.fillRect(90, 876, 900, 340);
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(90, 876, 900, 340);
+
+            ctx.fillStyle = '#b91c1c';
+            ctx.font = '800 32px "Be Vietnam Pro", sans-serif';
+            ctx.fillText('A Di Đà Phật... Xin cho năm 2026:', 540, 926);
+
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '700 25px "Be Vietnam Pro", sans-serif';
+            const cardChecks = [
+                '✅ Hệ thống ETAX ổn định, HĐĐT – MTT (Captcha) thông suốt.',
+                '✅ Đối soát LPTB – TMS chuẩn chỉnh, đóng 03 – 06 đúng hạn.',
+                '✅ Giải quyết kiến nghị NNT nhanh gọn, báo cáo gọn gàng.',
+                '✅ KPI nhẹ nhàng đủ chỉ tiêu, nợ thuế giảm, kiểm tra an toàn.',
+                '✅ Có sức khỏe & tinh thần vững vàng để đi tập GYM! 💪❤️'
+            ];
+            cardChecks.forEach((line, idx) => {
+                ctx.fillText(line, 125, 976 + idx * 42);
+            });
+
+            const latestWish = userState.wishes[0] || 'Cầu bình an, sức khỏe và vạn sự hanh thông!';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#047857';
+            ctx.font = 'italic 700 24px "Be Vietnam Pro", sans-serif';
+            ctx.fillText(`“${latestWish.slice(0, 68)}”`, 540, 1192);
+
+            ctx.fillStyle = '#fde68a';
+            ctx.font = '700 24px "Be Vietnam Pro", sans-serif';
+            ctx.fillText('LÊN CHÙA CẦU AN 3D • CHÙA BÁC ÁI 2026', 540, 1268);
+
+            const dataUrl = canvas.toDataURL('image/png');
+            document.getElementById('share-preview-img').src = dataUrl;
+        }
+
+        function openShareModal() {
+            hideAllModals();
+            renderShareCard1080x1350();
+            document.getElementById('modal-share').style.display = 'flex';
+        }
+
+        document.getElementById('btn-share-open').addEventListener('click', openShareModal);
+        document.getElementById('btn-notebook-to-share').addEventListener('click', openShareModal);
+
+        document.getElementById('btn-download-card').addEventListener('click', () => {
+            const canvas = document.getElementById('share-canvas');
+            const link = document.createElement('a');
+            link.download = 'BinhTamCanBoThue2026-ChuaBacAi.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('⬇️ Đã tải ảnh Thiệp Bình Tâm 2026 (1080×1350) về máy!');
+        });
+
+        document.getElementById('btn-native-share').addEventListener('click', async () => {
+            const canvas = document.getElementById('share-canvas');
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], 'BinhTamCanBoThue2026.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: 'Khóa Tu Bình Tâm Cán Bộ Thuế 2026 - Chùa Bác Ái',
+                            text: 'A Di Đà Phật... Cầu cho ETAX ổn định, KPI nhẹ nhàng, khỏe mạnh đi tập GYM!',
+                            files: [file]
+                        });
+                        return;
+                    } catch (err) { console.warn(err); }
+                }
+                document.getElementById('btn-download-card').click();
+            });
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast-message');
+            toast.innerText = msg;
+            toast.style.opacity = '1';
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 3800);
+        }
+
+        // Kiểm tra khoảng cách để hiện nút Hành động lớn khi lại gần
+        function checkProximityTriggers() {
+            const dBurner = Math.hypot(playerPos.x - 0, playerPos.z - 5.5);
+            const dHall = Math.hypot(playerPos.x - 0, playerPos.z - (-11));
+            const dBell = Math.hypot(playerPos.x - 13, playerPos.z - 6);
+            const dTree = Math.hypot(playerPos.x - (-13), playerPos.z - 4);
+            const dPond = Math.hypot(playerPos.x - (-13), playerPos.z - 13);
+            const dFortune = Math.hypot(playerPos.x - 11.5, playerPos.z - 12.5);
+
+            const wrap = document.getElementById('action-prompt-wrap');
+            const icon = document.getElementById('action-icon');
+            const label = document.getElementById('action-label');
+
+            if (dBurner < 3.5) {
+                wrap.classList.remove('hidden');
+                icon.innerText = '🪔'; label.innerText = 'Dâng Hương Cầu ETAX Mượt';
+                window.currentActivity = 'incense';
+            } else if (dHall < 6.5) {
+                wrap.classList.remove('hidden');
+                icon.innerText = '🪵'; label.innerText = 'Gõ Mõ Xả KPI & Tụng Kinh';
+                window.currentActivity = 'woodenfish';
+            } else if (dBell < 4.2) {
+                wrap.classList.remove('hidden');
+                icon.innerText = '🔔'; label.innerText = 'Thỉnh Chuông Đại Hồng Chung';
+                window.currentActivity = 'bell';
+            } else if (dTree < 4.5 || dPond < 5.0) {
+                wrap.classList.remove('hidden');
+                icon.innerText = '🌸'; label.innerText = 'Treo Lụa Đỏ / Thả Hoa Đăng';
+                window.currentActivity = 'wish';
+            } else if (dFortune < 3.5) {
+                wrap.classList.remove('hidden');
+                icon.innerText = '🎋'; label.innerText = 'Xin Quẻ Bình Tâm 2026';
+                window.currentActivity = 'fortune';
+            } else {
+                wrap.classList.add('hidden');
+                window.currentActivity = null;
+            }
+        }
+
+        /* ============================================================================
+         * PHẦN 10: VÒNG LẶP ANIMATION 3D CHÍNH (CHUYỂN ĐỘNG NHÂN VẬT, BONG BÓNG HOT, HẠT KHÓI)
+         * ============================================================================ */
+        const clock = new THREE.Clock();
+        const projVec = new THREE.Vector3();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = Math.min(clock.getDelta(), 0.1);
+            const elapsed = clock.getElapsedTime();
+
+            // 1. Điều khiển di chuyển nhân vật
+            let mx = joyVec.x;
+            let mz = joyVec.y;
+            if (keys.w) mz -= 1;
+            if (keys.s) mz += 1;
+            if (keys.a) mx -= 1;
+            if (keys.d) mx += 1;
+
+            if (Math.abs(mx) > 0.05 || Math.abs(mz) > 0.05) {
+                if (playerGroup.userData.isMeditating) setMeditationPose(playerGroup, false);
+                isMoving = false;
+                playerTargetPos = null;
+                targetRing.visible = false;
+
+                const len = Math.hypot(mx, mz);
+                const nx = mx / len, nz = mz / len;
+                const sinY = Math.sin(camYaw), cosY = Math.cos(camYaw);
+                const worldDx = nx * cosY + nz * sinY;
+                const worldDz = nz * cosY - nx * sinY;
+
+                playerPos.x += worldDx * playerSpeed * delta;
+                playerPos.z += worldDz * playerSpeed * delta;
+                playerGroup.rotation.y = Math.atan2(-worldDx, -worldDz);
+            } else if (isMoving && playerTargetPos) {
+                const dx = playerTargetPos.x - playerPos.x;
+                const dz = playerTargetPos.z - playerPos.z;
+                const dist = Math.hypot(dx, dz);
+                if (dist < 0.18) {
+                    isMoving = false;
+                    playerTargetPos = null;
+                    targetRing.visible = false;
+                } else {
+                    const stepX = (dx / dist) * playerSpeed * delta;
+                    const stepZ = (dz / dist) * playerSpeed * delta;
+                    playerPos.x += stepX;
+                    playerPos.z += stepZ;
+                    playerGroup.rotation.y = Math.atan2(-dx, -dz);
+                }
+            }
+
+            // Giới hạn biên sân chùa và kiểm tra va chạm
+            playerPos.x = Math.max(-23, Math.min(23, playerPos.x));
+            playerPos.z = Math.max(-19.5, Math.min(25, playerPos.z));
+
+            colliders.forEach(c => {
+                const dx = playerPos.x - c.x, dz = playerPos.z - c.z;
+                const d = Math.hypot(dx, dz);
+                if (d < c.r + 0.38 && d > 0.001) {
+                    playerPos.x = c.x + (dx / d) * (c.r + 0.38);
+                    playerPos.z = c.z + (dz / d) * (c.r + 0.38);
+                }
+            });
+
+            // Độ cao sàn khi bước lên Chánh Điện
+            const onHallFloor = (Math.abs(playerPos.x) < 13.5 && playerPos.z < -3.5 && playerPos.z > -22);
+            const targetY = onHallFloor ? 0.55 : 0;
+            playerGroup.position.set(playerPos.x, targetY, playerPos.z);
+
+            // Hoạt ảnh bước chân hoặc ngồi thiền thở nhẹ của nhân vật người chơi
+            const pud = playerGroup.userData;
+            const walkingNow = (Math.abs(mx) > 0.05 || Math.abs(mz) > 0.05 || isMoving) && !pud.isMeditating;
+            if (walkingNow) {
+                const swing = Math.sin(elapsed * 10) * 0.45;
+                pud.leftLeg.rotation.x = swing;
+                pud.rightLeg.rotation.x = -swing;
+                pud.leftArm.rotation.x = -swing * 0.6;
+                pud.rightArm.rotation.x = swing * 0.6;
+                pud.prayingHands.visible = false;
+                pud.breathPuff.visible = false;
+            } else {
+                pud.leftLeg.rotation.x = 0;
+                pud.rightLeg.rotation.x = 0;
+                pud.prayingHands.visible = true;
+                // Nhịp thở bình tâm nhẹ nhàng như trong tranh
+                const breathScale = 0.7 + Math.sin(elapsed * 3.2) * 0.35;
+                pud.breathPuff.visible = true;
+                pud.breathPuff.scale.setScalar(Math.max(0.2, breathScale));
+            }
+
+            if (targetRing.visible) {
+                targetRing.rotation.z = elapsed * 2.5;
+            }
+
+            // 2. Chuyển động nhịp thở & vái nhẹ của 24 Cán bộ Thuế AI ngồi thiền trong Chánh Điện
+            aiOfficers.forEach((npc) => {
+                const s = 0.65 + Math.sin(elapsed * 2.8 + npc.phase) * 0.35;
+                npc.mesh.userData.breathPuff.scale.setScalar(Math.max(0.2, s));
+                npc.mesh.userData.headGroup.rotation.x = Math.sin(elapsed * 1.4 + npc.phase) * 0.06;
+            });
+
+            // 3. Chuyển động của các Cán bộ & Phật tử đi dạo ngoài sân
+            walkers.forEach((w) => {
+                const dx = w.targetX - w.mesh.position.x;
+                const dz = w.targetZ - w.mesh.position.z;
+                const d = Math.hypot(dx, dz);
+                if (d < 0.4) {
+                    w.targetX = (Math.random() - 0.5) * 20;
+                    w.targetZ = 3 + Math.random() * 15;
+                } else {
+                    w.mesh.position.x += (dx / d) * w.speed * delta;
+                    w.mesh.position.z += (dz / d) * w.speed * delta;
+                    w.mesh.rotation.y = Math.atan2(-dx, -dz);
+                    const sw = Math.sin(elapsed * 7 + w.phase) * 0.35;
+                    w.mesh.userData.leftLeg.rotation.x = sw;
+                    w.mesh.userData.rightLeg.rotation.x = -sw;
+                }
+            });
+
+            // 4. Cập nhật vị trí 2D cho các Bong bóng "🔥 HOT" trên đầu các Cán bộ Thuế AI
+            activeBubbles.forEach((b) => {
+                b.timer += delta;
+                if (b.timer > 5.2) {
+                    b.timer = 0;
+                    b.npcIndex = Math.floor(Math.random() * aiOfficers.length);
+                    refreshBubbleContent(b);
+                }
+                const targetNpc = aiOfficers[b.npcIndex].mesh;
+                projVec.copy(targetNpc.position);
+                projVec.y += 2.35;
+                projVec.project(camera);
+
+                if (projVec.z > 1) {
+                    b.el.style.opacity = '0';
+                } else {
+                    const sx = (projVec.x * 0.5 + 0.5) * window.innerWidth;
+                    const sy = (-projVec.y * 0.5 + 0.5) * window.innerHeight;
+                    b.el.style.left = `${sx}px`;
+                    b.el.style.top = `${sy}px`;
+                    b.el.style.opacity = '1';
+                }
+            });
+
+            // 5. Camera xoay mượt theo góc nhìn sau lưng nhân vật (nhìn rõ chữ "THUẾ" sau lưng áo)
+            const desiredCamX = playerPos.x + Math.sin(camYaw) * camDist;
+            const desiredCamZ = playerPos.z + Math.cos(camYaw) * camDist;
+            const desiredCamY = targetY + camDist * camPitch;
+
+            camera.position.x += (desiredCamX - camera.position.x) * 0.12;
+            camera.position.z += (desiredCamZ - camera.position.z) * 0.12;
+            camera.position.y += (desiredCamY - camera.position.y) * 0.12;
+            camera.lookAt(playerPos.x, targetY + 1.35, playerPos.z - 1.2);
+
+            checkProximityTriggers();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            animate();
+        };
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
